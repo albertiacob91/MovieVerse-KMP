@@ -1,4 +1,4 @@
-package com.albertiacob91.movieversekmp.presentation.screens
+package com.albertiacob91.movieversekmp.presentation.screens.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
