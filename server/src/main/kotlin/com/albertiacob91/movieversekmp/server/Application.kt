@@ -9,6 +9,7 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import com.albertiacob91.movieversekmp.server.routing.authRoutes
+import com.albertiacob91.movieversekmp.server.routing.favoriteRoutes
 
 fun main() {
     embeddedServer(Netty, port = 8081, host = "0.0.0.0", module = Application::module)
@@ -32,5 +33,6 @@ fun Application.module() {
         }
 
         authRoutes()
+        favoriteRoutes()
     }
 }
