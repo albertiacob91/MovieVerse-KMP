@@ -8,6 +8,7 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import com.albertiacob91.movieversekmp.server.routing.authRoutes
 
 fun main() {
     embeddedServer(Netty, port = 8081, host = "0.0.0.0", module = Application::module)
@@ -29,5 +30,7 @@ fun Application.module() {
         get("/health") {
             call.respond(mapOf("status" to "ok"))
         }
+
+        authRoutes()
     }
 }
