@@ -47,7 +47,22 @@ class UserRepository {
             }
             .singleOrNull()
     }
+
+    fun findById(id: UUID): UserRecord? = transaction {
+        UsersTable.selectAll()
+            .where { UsersTable.id eq id }
+            .map {
+                UserRecord(
+                    id = it[UsersTable.id].toString(),
+                    username = it[UsersTable.username],
+                    email = it[UsersTable.email],
+                    passwordHash = it[UsersTable.passwordHash]
+                )
+            }
+            .singleOrNull()
+    }
 }
+
 
 data class UserRecord(
     val id: String,
