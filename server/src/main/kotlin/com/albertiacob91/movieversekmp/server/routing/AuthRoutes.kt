@@ -34,6 +34,14 @@ fun Route.authRoutes() {
                 return@post
             }
 
+            if (userRepository.existsByUsername(request.username)) {
+                call.respond(
+                    HttpStatusCode.Conflict,
+                    AuthResponse(message = "Username already taken")
+                )
+                return@post
+            }
+
             val hashedPassword = PasswordHasher.hash(request.password)
             val userId = userRepository.createUser(
                 username = request.username,

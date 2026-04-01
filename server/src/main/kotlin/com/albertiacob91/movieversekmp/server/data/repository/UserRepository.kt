@@ -61,6 +61,12 @@ class UserRepository {
             }
             .singleOrNull()
     }
+
+    fun existsByUsername(username: String): Boolean = transaction {
+        UsersTable.selectAll()
+            .where { UsersTable.username eq username }
+            .count() > 0
+    }
 }
 
 
