@@ -9,21 +9,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
-    onRegisterClick: (username: String, email: String, password: String) -> Unit
+    onRegisterClick: suspend (username: String, email: String, password: String) -> String
 ) {
     val username = remember { mutableStateOf("") }
     val email = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
+    var resultMessage by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -61,7 +62,11 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { onRegisterClick(username.value, email.value, password.value) }
+            onClick = {
+                scope.launch {
+                    resultMessage = onRegisterClick(username.value, email.value, password.value)
+                }
+            }
         ) {
             Text("Register")
         }
@@ -73,5 +78,9 @@ fun RegisterScreen(
         ) {
             Text("Go to Login")
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(resultMessage)
     }
 }

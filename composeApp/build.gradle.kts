@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -32,6 +33,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation("io.ktor:ktor-client-cio:3.4.2")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -42,6 +44,9 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation("io.ktor:ktor-client-core:3.4.2")
+            implementation("io.ktor:ktor-client-content-negotiation:3.4.2")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.2")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
