@@ -17,10 +17,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun LoginScreen(
-    onNavigateToRegister: () -> Unit,
-    onLoginClick: (email: String, password: String) -> Unit
+fun RegisterScreen(
+    onNavigateToLogin: () -> Unit,
+    onRegisterClick: (username: String, email: String, password: String) -> Unit
 ) {
+    val username = remember { mutableStateOf("") }
     val email = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
 
@@ -31,9 +32,17 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Login")
+        Text("Register")
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = username.value,
+            onValueChange = { username.value = it },
+            label = { Text("Username") }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = email.value,
@@ -52,17 +61,17 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { onLoginClick(email.value, password.value) }
+            onClick = { onRegisterClick(username.value, email.value, password.value) }
         ) {
-            Text("Login")
+            Text("Register")
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
         Button(
-            onClick = onNavigateToRegister
+            onClick = onNavigateToLogin
         ) {
-            Text("Go to Register")
+            Text("Go to Login")
         }
     }
 }
