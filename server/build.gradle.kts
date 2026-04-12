@@ -35,4 +35,9 @@ dependencies {
     implementation("org.postgresql:postgresql:42.7.7")
 
     implementation("org.jetbrains.exposed:exposed-java-time:0.61.0")
+
+    implementation("io.ktor:ktor-client-core:3.3.1")
+    implementation("io.ktor:ktor-client-cio:3.3.1")
+    implementation("io.ktor:ktor-client-content-negotiation:3.3.1")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.1")
 }
