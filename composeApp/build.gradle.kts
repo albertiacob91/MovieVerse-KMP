@@ -47,6 +47,7 @@ kotlin {
             implementation("io.ktor:ktor-client-core:3.4.2")
             implementation("io.ktor:ktor-client-content-negotiation:3.4.2")
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.2")
+            implementation("com.russhwolf:multiplatform-settings-no-arg:1.3.0")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
