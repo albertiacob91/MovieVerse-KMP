@@ -1,48 +1,91 @@
 package com.albertiacob91.movieversekmp.navigation
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import com.albertiacob91.movieversekmp.data.local.SessionStorage
 import com.albertiacob91.movieversekmp.data.remote.AuthApi
 import com.albertiacob91.movieversekmp.presentation.screens.auth.LoginScreen
 import com.albertiacob91.movieversekmp.presentation.screens.auth.RegisterScreen
+import com.albertiacob91.movieversekmp.presentation.screens.home.HomeScreen
+import com.albertiacob91.movieversekmp.presentation.components.LoadingScreen
 
 @Composable
 fun MovieVerseNavigation() {
-    var currentScreen by remember { mutableStateOf<AuthScreen>(AuthScreen.Login) }
     val authApi = remember { AuthApi() }
+    val sessionStorage = remember { SessionStorage() }
 
-    when (currentScreen) {
-        AuthScreen.Login -> {
-            LoginScreen(
-                onNavigateToRegister = {
-                    currentScreen = AuthScreen.Register
-                },
-                onLoginClick = { email, password ->
-                    runCatching {
-                        val response = authApi.login(email, password)
-                        response.message + (response.token?.let { " | Token received" } ?: "")
-                    }.getOrElse {
-                        "Login error: ${it.message}"
-                    }
-                }
-            )
+    var appScreen by remember { mutableStateOf<AppScreen?>(null) }
+    var authScreen by remember { mutableStateOf<AuthScreen>(AuthScreen.Login) }
+
+    LaunchedEffect(Unit) {
+        val token = sessionStorage.getToken()
+
+        if (token.isNullOrBlank()) {
+            appScreen = AppScreen.Auth
+        } else {
+            val me = runCatching { authApi.getMe(token) }.getOrNull()
+
+            if (me != null) {
+                appScreen = AppScreen.Home
+            } else {
+                sessionStorage.clearSession()
+                appScreen = AppScreen.Auth
+            }
+        }
+    }
+
+    when (appScreen) {
+        null -> {
+            LoadingScreen()
         }
 
-        AuthScreen.Register -> {
-            RegisterScreen(
-                onNavigateToLogin = {
-                    currentScreen = AuthScreen.Login
-                },
-                onRegisterClick = { username, email, password ->
-                    runCatching {
-                        val response = authApi.register(username, email, password)
-                        response.message
-                    }.getOrElse {
-                        "Register error: ${it.message}"
-                    }
+        AppScreen.Auth -> {
+            when (authScreen) {
+                AuthScreen.Login -> {
+                    LoginScreen(
+                        onNavigateToRegister = {
+                            authScreen = AuthScreen.Register
+                        },
+                        onLoginClick = { email, password ->
+                            runCatching {
+                                val response = authApi.login(email, password)
+
+                                if (!response.token.isNullOrBlank()) {
+                                    sessionStorage.saveToken(response.token)
+                                    appScreen = AppScreen.Home
+                                }
+
+                                response.message
+                            }.getOrElse {
+                                "Login error: ${it.message}"
+                            }
+                        }
+                    )
+                }
+
+                AuthScreen.Register -> {
+                    RegisterScreen(
+                        onNavigateToLogin = {
+                            authScreen = AuthScreen.Login
+                        },
+                        onRegisterClick = { username, email, password ->
+                            runCatching {
+                                val response = authApi.register(username, email, password)
+                                response.message
+                            }.getOrElse {
+                                "Register error: ${it.message}"
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        AppScreen.Home -> {
+            HomeScreen(
+                onLogoutClick = {
+                    sessionStorage.clearSession()
+                    authScreen = AuthScreen.Login
+                    appScreen = AppScreen.Auth
                 }
             )
         }
