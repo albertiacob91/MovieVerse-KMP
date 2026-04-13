@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -13,26 +13,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.albertiacob91.movieversekmp.data.remote.AuthApi
 import com.albertiacob91.movieversekmp.data.remote.MovieDto
-import com.albertiacob91.movieversekmp.presentation.components.MovieCard
 
 @Composable
-fun MoviesScreen(
-    onLogoutClick: () -> Unit,
-    onMovieClick: (Int) -> Unit
+fun MovieDetailScreen(
+    movieId: Int,
+    onBackClick: () -> Unit
 ) {
     val authApi = remember { AuthApi() }
-    var movies by remember { mutableStateOf<List<MovieDto>>(emptyList()) }
+    var movie by remember { mutableStateOf<MovieDto?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(movieId) {
         runCatching {
-            authApi.getPopularMovies()
+            authApi.getMovieDetail(movieId)
         }.onSuccess {
-            movies = it
-            errorMessage = ""
+            movie = it
+            errorMessage = if (it == null) "Película no encontrada" else ""
         }.onFailure {
-            errorMessage = it.message ?: "Error cargando películas"
+            errorMessage = it.message ?: "Error cargando detalle"
         }
         isLoading = false
     }
@@ -43,32 +42,27 @@ fun MoviesScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.Top
     ) {
-        Button(onClick = onLogoutClick) {
-            Text("Logout")
+        Button(onClick = onBackClick) {
+            Text("Volver")
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         when {
             isLoading -> {
-                Text("Cargando películas...")
+                Text("Cargando detalle...")
             }
 
             errorMessage.isNotBlank() -> {
                 Text("Error: $errorMessage")
             }
 
-            else -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 16.dp)
-                ) {
-                    items(movies) { movie ->
-                        MovieCard(
-                            movie = movie,
-                            onClick = { onMovieClick(movie.id) }
-                        )
-                    }
-                }
+            movie != null -> {
+                Text(movie!!.title)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(movie!!.releaseDate ?: "Sin fecha")
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(movie!!.overview.ifBlank { "Sin descripción" })
             }
         }
     }
