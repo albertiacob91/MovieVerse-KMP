@@ -7,6 +7,7 @@ import com.albertiacob91.movieversekmp.presentation.screens.auth.LoginScreen
 import com.albertiacob91.movieversekmp.presentation.screens.auth.RegisterScreen
 import com.albertiacob91.movieversekmp.presentation.screens.home.HomeScreen
 import com.albertiacob91.movieversekmp.presentation.components.LoadingScreen
+import com.albertiacob91.movieversekmp.presentation.screens.movies.MoviesScreen
 
 @Composable
 fun MovieVerseNavigation() {
@@ -81,7 +82,7 @@ fun MovieVerseNavigation() {
         }
 
         AppScreen.Home -> {
-            HomeScreen(
+            MoviesScreen(
                 onLogoutClick = {
                     sessionStorage.clearSession()
                     authScreen = AuthScreen.Login
