@@ -7,6 +7,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.delete
 
 class AuthApi {
 
@@ -81,5 +82,35 @@ class AuthApi {
         } else {
             null
         }
+    }
+
+    suspend fun getFavorites(token: String): List<FavoriteDto> {
+        val response = client.get("http://10.0.2.2:8081/favorites") {
+            header("Authorization", "Bearer $token")
+        }
+
+        return if (response.status.value in 200..299) {
+            response.body()
+        } else {
+            emptyList()
+        }
+    }
+
+    suspend fun addFavorite(token: String, movieId: Int): Boolean {
+        val response = client.post("http://10.0.2.2:8081/favorites") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(FavoriteRequestDto(movieId))
+        }
+
+        return response.status.value in 200..299
+    }
+
+    suspend fun removeFavorite(token: String, movieId: Int): Boolean {
+        val response = client.delete("http://10.0.2.2:8081/favorites/$movieId") {
+            header("Authorization", "Bearer $token")
+        }
+
+        return response.status.value in 200..299
     }
 }
