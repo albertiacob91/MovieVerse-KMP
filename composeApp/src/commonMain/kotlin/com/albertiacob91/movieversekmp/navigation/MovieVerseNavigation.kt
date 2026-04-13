@@ -5,8 +5,9 @@ import com.albertiacob91.movieversekmp.data.local.SessionStorage
 import com.albertiacob91.movieversekmp.data.remote.AuthApi
 import com.albertiacob91.movieversekmp.presentation.screens.auth.LoginScreen
 import com.albertiacob91.movieversekmp.presentation.screens.auth.RegisterScreen
-import com.albertiacob91.movieversekmp.presentation.screens.home.HomeScreen
 import com.albertiacob91.movieversekmp.presentation.components.LoadingScreen
+import com.albertiacob91.movieversekmp.presentation.screens.movies.MoviesScreen
+import com.albertiacob91.movieversekmp.presentation.screens.movies.MovieDetailScreen
 import com.albertiacob91.movieversekmp.presentation.screens.movies.MoviesScreen
 
 @Composable
@@ -82,13 +83,31 @@ fun MovieVerseNavigation() {
         }
 
         AppScreen.Home -> {
-            MoviesScreen(
-                onLogoutClick = {
-                    sessionStorage.clearSession()
-                    authScreen = AuthScreen.Login
-                    appScreen = AppScreen.Auth
+            var movieScreen by remember { mutableStateOf<MovieScreen>(MovieScreen.List) }
+
+            when (val currentMovieScreen = movieScreen) {
+                MovieScreen.List -> {
+                    MoviesScreen(
+                        onLogoutClick = {
+                            sessionStorage.clearSession()
+                            authScreen = AuthScreen.Login
+                            appScreen = AppScreen.Auth
+                        },
+                        onMovieClick = { movieId ->
+                            movieScreen = MovieScreen.Detail(movieId)
+                        }
+                    )
                 }
-            )
+
+                is MovieScreen.Detail -> {
+                    MovieDetailScreen(
+                        movieId = currentMovieScreen.movieId,
+                        onBackClick = {
+                            movieScreen = MovieScreen.List
+                        }
+                    )
+                }
+            }
         }
     }
 }

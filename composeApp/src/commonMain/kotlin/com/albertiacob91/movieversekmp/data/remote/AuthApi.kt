@@ -72,4 +72,14 @@ class AuthApi {
             emptyList()
         }
     }
+
+    suspend fun getMovieDetail(movieId: Int): MovieDto? {
+        val response = client.get("http://10.0.2.2:8081/movies/$movieId")
+
+        return if (response.status.value in 200..299) {
+            response.body()
+        } else {
+            null
+        }
+    }
 }
