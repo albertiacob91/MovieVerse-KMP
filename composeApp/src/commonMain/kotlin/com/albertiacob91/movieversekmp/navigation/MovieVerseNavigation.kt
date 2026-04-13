@@ -8,7 +8,7 @@ import com.albertiacob91.movieversekmp.presentation.screens.auth.RegisterScreen
 import com.albertiacob91.movieversekmp.presentation.components.LoadingScreen
 import com.albertiacob91.movieversekmp.presentation.screens.movies.MoviesScreen
 import com.albertiacob91.movieversekmp.presentation.screens.movies.MovieDetailScreen
-import com.albertiacob91.movieversekmp.presentation.screens.movies.MoviesScreen
+import com.albertiacob91.movieversekmp.presentation.screens.movies.FavoritesScreen
 
 @Composable
 fun MovieVerseNavigation() {
@@ -95,6 +95,9 @@ fun MovieVerseNavigation() {
                         },
                         onMovieClick = { movieId ->
                             movieScreen = MovieScreen.Detail(movieId)
+                        },
+                        onFavoritesClick = {
+                            movieScreen = MovieScreen.Favorites
                         }
                     )
                 }
@@ -102,6 +105,14 @@ fun MovieVerseNavigation() {
                 is MovieScreen.Detail -> {
                     MovieDetailScreen(
                         movieId = currentMovieScreen.movieId,
+                        onBackClick = {
+                            movieScreen = MovieScreen.List
+                        }
+                    )
+                }
+
+                MovieScreen.Favorites -> {
+                    FavoritesScreen(
                         onBackClick = {
                             movieScreen = MovieScreen.List
                         }
