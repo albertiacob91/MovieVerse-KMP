@@ -63,4 +63,13 @@ class AuthApi {
             null
         }
     }
+    suspend fun getPopularMovies(): List<MovieDto> {
+        val response = client.get("http://10.0.2.2:8081/movies/popular")
+
+        return if (response.status.value in 200..299) {
+            response.body()
+        } else {
+            emptyList()
+        }
+    }
 }
