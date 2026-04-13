@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.albertiacob91.movieversekmp.data.local.SessionStorage
 import com.albertiacob91.movieversekmp.data.remote.AuthApi
 import com.albertiacob91.movieversekmp.data.remote.MovieDto
 
@@ -20,9 +21,12 @@ fun MovieDetailScreen(
     onBackClick: () -> Unit
 ) {
     val authApi = remember { AuthApi() }
+    val sessionStorage = remember { SessionStorage() }
+
     var movie by remember { mutableStateOf<MovieDto?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
+    var favoriteMessage by remember { mutableStateOf("") }
 
     LaunchedEffect(movieId) {
         runCatching {
@@ -63,6 +67,38 @@ fun MovieDetailScreen(
                 Text(movie!!.releaseDate ?: "Sin fecha")
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(movie!!.overview.ifBlank { "Sin descripción" })
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        val token = sessionStorage.getToken()
+                        if (token.isNullOrBlank()) {
+                            favoriteMessage = "Sesión no válida"
+                        } else {
+                            favoriteMessage = "Procesando..."
+                        }
+                    }
+                ) {
+                    Text("Añadir a favoritas")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(favoriteMessage)
+            }
+        }
+    }
+
+    LaunchedEffect(favoriteMessage) {
+        if (favoriteMessage == "Procesando...") {
+            val token = sessionStorage.getToken()
+            if (!token.isNullOrBlank()) {
+                val success = authApi.addFavorite(token, movieId)
+                favoriteMessage = if (success) {
+                    "Añadida a favoritas"
+                } else {
+                    "No se pudo añadir"
+                }
             }
         }
     }
