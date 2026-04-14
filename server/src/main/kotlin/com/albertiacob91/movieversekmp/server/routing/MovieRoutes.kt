@@ -45,5 +45,26 @@ fun Route.movieRoutes() {
                 )
             )
         }
+
+        get("/search") {
+            val query = call.request.queryParameters["query"].orEmpty().trim()
+
+            if (query.isBlank()) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Query is required"))
+                return@get
+            }
+
+            val movies = tmdbApi.searchMovies(query).map {
+                MovieResponse(
+                    id = it.id,
+                    title = it.title,
+                    posterUrl = it.posterPath?.let { path -> "https://image.tmdb.org/t/p/w500$path" },
+                    overview = it.overview,
+                    releaseDate = it.releaseDate
+                )
+            }
+
+            call.respond(HttpStatusCode.OK, movies)
+        }
     }
 }
