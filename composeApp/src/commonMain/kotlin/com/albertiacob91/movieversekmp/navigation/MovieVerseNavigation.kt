@@ -115,6 +115,9 @@ fun MovieVerseNavigation() {
                     FavoritesScreen(
                         onBackClick = {
                             movieScreen = MovieScreen.List
+                        },
+                        onMovieClick = { movieId ->
+                            movieScreen = MovieScreen.Detail(movieId)
                         }
                     )
                 }
