@@ -8,6 +8,7 @@ import io.ktor.http.contentType
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.delete
+import io.ktor.client.request.parameter
 
 class AuthApi {
 
@@ -132,5 +133,17 @@ class AuthApi {
         }
 
         return response.status.value in 200..299
+    }
+
+    suspend fun searchMovies(query: String): List<MovieDto> {
+        val response = client.get("http://10.0.2.2:8081/movies/search") {
+            parameter("query", query)
+        }
+
+        return if (response.status.value in 200..299) {
+            response.body()
+        } else {
+            emptyList()
+        }
     }
 }

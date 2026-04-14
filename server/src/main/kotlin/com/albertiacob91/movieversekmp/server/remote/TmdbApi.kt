@@ -40,4 +40,14 @@ class TmdbApi(
             parameter("language", "es-ES")
         }.body()
     }
+
+    suspend fun searchMovies(query: String): List<TmdbMovieDto> {
+        val response: TmdbPopularResponseDto = client.get("$baseUrl/search/movie") {
+            parameter("api_key", apiKey)
+            parameter("language", "es-ES")
+            parameter("query", query)
+        }.body()
+
+        return response.results
+    }
 }
