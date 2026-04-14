@@ -113,4 +113,24 @@ class AuthApi {
 
         return response.status.value in 200..299
     }
+
+    suspend fun getComments(movieId: Int): List<CommentDto> {
+        val response = client.get("http://10.0.2.2:8081/comments/$movieId")
+
+        return if (response.status.value in 200..299) {
+            response.body()
+        } else {
+            emptyList()
+        }
+    }
+
+    suspend fun addComment(token: String, movieId: Int, content: String): Boolean {
+        val response = client.post("http://10.0.2.2:8081/comments") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(CommentRequestDto(movieId, content))
+        }
+
+        return response.status.value in 200..299
+    }
 }
