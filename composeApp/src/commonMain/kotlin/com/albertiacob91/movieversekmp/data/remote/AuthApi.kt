@@ -146,4 +146,9 @@ class AuthApi {
             emptyList()
         }
     }
+
+    suspend fun isFavorite(token: String, movieId: Int): Boolean {
+        val favorites = getFavorites(token)
+        return favorites.any { it.movieId == movieId }
+    }
 }

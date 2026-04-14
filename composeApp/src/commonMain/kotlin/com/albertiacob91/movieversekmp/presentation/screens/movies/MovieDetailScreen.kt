@@ -38,9 +38,19 @@ fun MovieDetailScreen(
     var errorMessage by remember { mutableStateOf("") }
     var favoriteMessage by remember { mutableStateOf("") }
     var commentMessage by remember { mutableStateOf("") }
+    var isFavorite by remember { mutableStateOf(false) }
 
     suspend fun loadComments() {
         comments = authApi.getComments(movieId)
+    }
+
+    suspend fun loadFavoriteState() {
+        val token = sessionStorage.getToken()
+        isFavorite = if (!token.isNullOrBlank()) {
+            authApi.isFavorite(token, movieId)
+        } else {
+            false
+        }
     }
 
     LaunchedEffect(movieId) {
@@ -53,9 +63,8 @@ fun MovieDetailScreen(
             errorMessage = it.message ?: "Error cargando detalle"
         }
 
-        runCatching {
-            loadComments()
-        }
+        runCatching { loadComments() }
+        runCatching { loadFavoriteState() }
 
         isLoading = false
     }
@@ -99,11 +108,30 @@ fun MovieDetailScreen(
                             if (token.isNullOrBlank()) {
                                 favoriteMessage = "Sesión no válida"
                             } else {
-                                favoriteMessage = "Procesando..."
+                                scope.launch {
+                                    favoriteMessage = "Procesando..."
+
+                                    val success = if (isFavorite) {
+                                        authApi.removeFavorite(token, movieId)
+                                    } else {
+                                        authApi.addFavorite(token, movieId)
+                                    }
+
+                                    if (success) {
+                                        isFavorite = !isFavorite
+                                        favoriteMessage = if (isFavorite) {
+                                            "Añadida a favoritas"
+                                        } else {
+                                            "Quitada de favoritas"
+                                        }
+                                    } else {
+                                        favoriteMessage = "No se pudo actualizar"
+                                    }
+                                }
                             }
                         }
                     ) {
-                        Text("Añadir a favoritas")
+                        Text(if (isFavorite) "Quitar de favoritas" else "Añadir a favoritas")
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -161,20 +189,6 @@ fun MovieDetailScreen(
 
                 items(comments) { comment ->
                     CommentItem(comment)
-                }
-            }
-        }
-    }
-
-    LaunchedEffect(favoriteMessage) {
-        if (favoriteMessage == "Procesando...") {
-            val token = sessionStorage.getToken()
-            if (!token.isNullOrBlank()) {
-                val success = authApi.addFavorite(token, movieId)
-                favoriteMessage = if (success) {
-                    "Añadida a favoritas"
-                } else {
-                    "No se pudo añadir"
                 }
             }
         }
