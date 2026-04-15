@@ -1,9 +1,8 @@
 package com.albertiacob91.movieversekmp.presentation.screens.movies
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,7 +12,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.albertiacob91.movieversekmp.data.local.SessionStorage
 import com.albertiacob91.movieversekmp.data.remote.AuthApi
 import com.albertiacob91.movieversekmp.data.remote.CommentDto
@@ -29,6 +33,7 @@ fun MovieDetailScreen(
     val authApi = remember { AuthApi() }
     val sessionStorage = remember { SessionStorage() }
     val scope = rememberCoroutineScope()
+    val context = LocalPlatformContext.current
 
     var movie by remember { mutableStateOf<MovieDto?>(null) }
     var comments by remember { mutableStateOf<List<CommentDto>>(emptyList()) }
@@ -39,6 +44,8 @@ fun MovieDetailScreen(
     var favoriteMessage by remember { mutableStateOf("") }
     var commentMessage by remember { mutableStateOf("") }
     var isFavorite by remember { mutableStateOf(false) }
+
+    var imageError by remember { mutableStateOf("") }
 
     suspend fun loadComments() {
         comments = authApi.getComments(movieId)
@@ -72,8 +79,7 @@ fun MovieDetailScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Top
+            .padding(16.dp)
     ) {
         item {
             Button(onClick = onBackClick) {
@@ -94,11 +100,39 @@ fun MovieDetailScreen(
 
             movie != null -> {
                 item {
-                    Text(movie!!.title)
+                    movie?.posterUrl?.let { posterUrl ->
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data(posterUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = movie?.title,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp),
+                            contentScale = ContentScale.Crop,
+                            onSuccess = {
+                                imageError = ""
+                            },
+                            onError = {
+                                imageError = it.result.throwable.message ?: "Error cargando imagen"
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (imageError.isNotBlank()) {
+                            Text("Image error: $imageError")
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    Text(movie?.title.orEmpty())
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(movie!!.releaseDate ?: "Sin fecha")
+                    Text(movie?.releaseDate ?: "Sin fecha")
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(movie!!.overview.ifBlank { "Sin descripción" })
+                    Text(movie?.overview?.ifBlank { "Sin descripción" } ?: "Sin descripción")
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -157,9 +191,11 @@ fun MovieDetailScreen(
                                 token.isNullOrBlank() -> {
                                     commentMessage = "Sesión no válida"
                                 }
+
                                 commentText.isBlank() -> {
                                     commentMessage = "El comentario no puede estar vacío"
                                 }
+
                                 else -> {
                                     scope.launch {
                                         commentMessage = "Enviando..."
