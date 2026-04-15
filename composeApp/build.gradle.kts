@@ -34,6 +34,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation("io.ktor:ktor-client-cio:3.4.2")
+            implementation("io.coil-kt.coil3:coil-network-okhttp:3.4.0")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -48,6 +49,7 @@ kotlin {
             implementation("io.ktor:ktor-client-content-negotiation:3.4.2")
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.2")
             implementation("com.russhwolf:multiplatform-settings-no-arg:1.3.0")
+            implementation("io.coil-kt.coil3:coil-compose:3.4.0")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
