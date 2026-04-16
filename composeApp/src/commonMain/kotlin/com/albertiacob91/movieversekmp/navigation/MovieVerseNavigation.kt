@@ -9,6 +9,7 @@ import com.albertiacob91.movieversekmp.presentation.components.LoadingScreen
 import com.albertiacob91.movieversekmp.presentation.screens.movies.MoviesScreen
 import com.albertiacob91.movieversekmp.presentation.screens.movies.MovieDetailScreen
 import com.albertiacob91.movieversekmp.presentation.screens.movies.FavoritesScreen
+import com.albertiacob91.movieversekmp.presentation.screens.profile.ProfileScreen
 
 @Composable
 fun MovieVerseNavigation() {
@@ -98,6 +99,9 @@ fun MovieVerseNavigation() {
                         },
                         onFavoritesClick = {
                             movieScreen = MovieScreen.Favorites
+                        },
+                        onProfileClick = {
+                            movieScreen = MovieScreen.Profile
                         }
                     )
                 }
@@ -118,6 +122,19 @@ fun MovieVerseNavigation() {
                         },
                         onMovieClick = { movieId ->
                             movieScreen = MovieScreen.Detail(movieId)
+                        }
+                    )
+                }
+
+                MovieScreen.Profile -> {
+                    ProfileScreen(
+                        onBackClick = {
+                            movieScreen = MovieScreen.List
+                        },
+                        onLogoutClick = {
+                            sessionStorage.clearSession()
+                            authScreen = AuthScreen.Login
+                            appScreen = AppScreen.Auth
                         }
                     )
                 }
