@@ -22,7 +22,8 @@ import kotlinx.coroutines.launch
 fun MoviesScreen(
     onLogoutClick: () -> Unit,
     onMovieClick: (Int) -> Unit,
-    onFavoritesClick: () -> Unit
+    onFavoritesClick: () -> Unit,
+    onProfileClick: () -> Unit
 ) {
     val authApi = remember { AuthApi() }
     val scope = rememberCoroutineScope()
@@ -85,6 +86,13 @@ fun MoviesScreen(
             modifier = Modifier.padding(top = 8.dp)
         ) {
             Text("Ver favoritas")
+        }
+
+        Button(
+            onClick = onProfileClick,
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            Text("Ver perfil")
         }
 
         OutlinedTextField(
