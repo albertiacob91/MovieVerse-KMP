@@ -59,6 +59,8 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
             implementation("io.ktor:ktor-client-cio:3.4.2")
+            implementation("org.slf4j:slf4j-simple:2.0.16")
+            implementation("io.coil-kt.coil3:coil-network-okhttp:3.4.0")
         }
     }
 }
