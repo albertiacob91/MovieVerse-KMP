@@ -1,9 +1,9 @@
-package com.albertiacob91.movieversekmp.data.remote
+package com.albertiacob91.movieversekmp.server.data.remote.response
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MovieDto(
+data class MovieResponse(
     val id: Int,
     val title: String,
     val posterUrl: String? = null,
