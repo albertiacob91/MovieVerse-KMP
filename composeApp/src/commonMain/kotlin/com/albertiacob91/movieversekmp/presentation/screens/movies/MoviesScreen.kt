@@ -44,7 +44,7 @@ fun MoviesScreen(
                 movies = it
                 errorMessage = ""
             }.onFailure {
-                errorMessage = it.message ?: "Error cargando películas"
+                errorMessage = it.stackTraceToString()
             }
             isLoading = false
         }
