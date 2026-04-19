@@ -2,6 +2,7 @@ package com.albertiacob91.movieversekmp.presentation.screens.movies
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,15 +12,15 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.albertiacob91.movieversekmp.data.local.SessionStorage
 import com.albertiacob91.movieversekmp.data.remote.AuthApi
 import com.albertiacob91.movieversekmp.presentation.model.FavoriteMovieUi
+import com.albertiacob91.movieversekmp.presentation.theme.Dimens
 import kotlinx.coroutines.launch
 
 @Composable
 fun FavoritesScreen(
-    onBackClick: () -> Unit,
+    contentPadding: PaddingValues,
     onMovieClick: (Int) -> Unit
 ) {
     val authApi = remember { AuthApi() }
@@ -63,13 +64,10 @@ fun FavoritesScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(contentPadding)
+            .padding(horizontal = Dimens.screenPadding),
         verticalArrangement = Arrangement.Top
     ) {
-        Button(onClick = onBackClick) {
-            Text("Volver")
-        }
-
         when {
             isLoading -> Text("Cargando favoritas...")
             errorMessage.isNotBlank() -> Text("Error: $errorMessage")
@@ -78,21 +76,21 @@ fun FavoritesScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 16.dp)
+                        .padding(top = Dimens.mediumSpacing)
                 ) {
                     items(favorites) { favorite ->
                         Card(
-                            modifier = Modifier.padding(vertical = 8.dp)
+                            modifier = Modifier.padding(vertical = Dimens.smallSpacing)
                         ) {
                             Column(
-                                modifier = Modifier.padding(16.dp)
+                                modifier = Modifier.padding(Dimens.mediumSpacing)
                             ) {
                                 Text(favorite.title)
                                 Text(favorite.releaseDate ?: "Sin fecha")
 
                                 Button(
                                     onClick = { onMovieClick(favorite.movieId) },
-                                    modifier = Modifier.padding(top = 8.dp)
+                                    modifier = Modifier.padding(top = Dimens.smallSpacing)
                                 ) {
                                     Text("Ver detalle")
                                 }
@@ -109,7 +107,7 @@ fun FavoritesScreen(
                                             }
                                         }
                                     },
-                                    modifier = Modifier.padding(top = 8.dp)
+                                    modifier = Modifier.padding(top = Dimens.smallSpacing)
                                 ) {
                                     Text("Quitar de favoritas")
                                 }

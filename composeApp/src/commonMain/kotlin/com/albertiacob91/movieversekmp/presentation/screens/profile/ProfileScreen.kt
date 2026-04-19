@@ -2,20 +2,23 @@ package com.albertiacob91.movieversekmp.presentation.screens.profile
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.albertiacob91.movieversekmp.data.local.SessionStorage
 import com.albertiacob91.movieversekmp.data.remote.AuthApi
 import com.albertiacob91.movieversekmp.presentation.model.ProfileUi
+import com.albertiacob91.movieversekmp.presentation.theme.Dimens
 
 @Composable
 fun ProfileScreen(
-    onBackClick: () -> Unit,
+    contentPadding: PaddingValues,
     onLogoutClick: () -> Unit
 ) {
     val authApi = remember { AuthApi() }
@@ -57,52 +60,69 @@ fun ProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(contentPadding)
+            .padding(horizontal = Dimens.screenPadding),
         verticalArrangement = Arrangement.Top
     ) {
-        Button(onClick = onBackClick) {
-            Text("Volver")
-        }
-
         when {
             isLoading -> {
                 Text(
                     text = "Cargando perfil...",
-                    modifier = Modifier.padding(top = 16.dp)
+                    modifier = Modifier.padding(top = Dimens.mediumSpacing)
                 )
             }
 
             errorMessage.isNotBlank() -> {
                 Text(
                     text = "Error: $errorMessage",
-                    modifier = Modifier.padding(top = 16.dp)
+                    modifier = Modifier.padding(top = Dimens.mediumSpacing)
                 )
             }
 
             profile != null -> {
-                Text(
-                    text = "Perfil",
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+                Card(
+                    modifier = Modifier.padding(top = Dimens.mediumSpacing)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(Dimens.mediumSpacing)
+                    ) {
+                        Text(
+                            text = "Username",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        Text(
+                            text = profile!!.username,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(top = Dimens.smallSpacing)
+                        )
 
-                Text(
-                    text = "Username: ${profile!!.username}",
-                    modifier = Modifier.padding(top = 12.dp)
-                )
+                        Text(
+                            text = "Email",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(top = Dimens.mediumSpacing)
+                        )
+                        Text(
+                            text = profile!!.email,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(top = Dimens.smallSpacing)
+                        )
 
-                Text(
-                    text = "Email: ${profile!!.email}",
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-
-                Text(
-                    text = "User ID: ${profile!!.id}",
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                        Text(
+                            text = "User ID",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(top = Dimens.mediumSpacing)
+                        )
+                        Text(
+                            text = profile!!.id,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(top = Dimens.smallSpacing)
+                        )
+                    }
+                }
 
                 Button(
                     onClick = onLogoutClick,
-                    modifier = Modifier.padding(top = 24.dp)
+                    modifier = Modifier.padding(top = Dimens.largeSpacing)
                 ) {
                     Text("Logout")
                 }
