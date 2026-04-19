@@ -8,13 +8,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.albertiacob91.movieversekmp.data.local.SessionStorage
 import com.albertiacob91.movieversekmp.data.remote.AuthApi
-import com.albertiacob91.movieversekmp.presentation.model.FavoriteMovieUi
+import com.albertiacob91.movieversekmp.data.remote.MovieDto
+import com.albertiacob91.movieversekmp.presentation.components.MovieCard
 import com.albertiacob91.movieversekmp.presentation.theme.Dimens
 import kotlinx.coroutines.launch
 
@@ -27,7 +27,7 @@ fun FavoritesScreen(
     val sessionStorage = remember { SessionStorage() }
     val scope = rememberCoroutineScope()
 
-    var favorites by remember { mutableStateOf<List<FavoriteMovieUi>>(emptyList()) }
+    var favoriteMovies by remember { mutableStateOf<List<MovieDto>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
 
@@ -42,17 +42,11 @@ fun FavoritesScreen(
 
         val favoriteDtos = authApi.getFavorites(token)
 
-        val mapped = favoriteDtos.mapNotNull { favorite ->
-            authApi.getMovieDetail(favorite.movieId)?.let { movie ->
-                FavoriteMovieUi(
-                    movieId = favorite.movieId,
-                    title = movie.title,
-                    releaseDate = movie.releaseDate
-                )
-            }
+        val movies = favoriteDtos.mapNotNull { favorite ->
+            authApi.getMovieDetail(favorite.movieId)
         }
 
-        favorites = mapped
+        favoriteMovies = movies
         errorMessage = ""
         isLoading = false
     }
@@ -69,48 +63,56 @@ fun FavoritesScreen(
         verticalArrangement = Arrangement.Top
     ) {
         when {
-            isLoading -> Text("Cargando favoritas...")
-            errorMessage.isNotBlank() -> Text("Error: $errorMessage")
-            favorites.isEmpty() -> Text("No tienes favoritas todavía")
+            isLoading -> {
+                Text(
+                    text = "Cargando favoritas...",
+                    modifier = Modifier.padding(top = Dimens.mediumSpacing)
+                )
+            }
+
+            errorMessage.isNotBlank() -> {
+                Text(
+                    text = "Error: $errorMessage",
+                    modifier = Modifier.padding(top = Dimens.mediumSpacing)
+                )
+            }
+
+            favoriteMovies.isEmpty() -> {
+                Text(
+                    text = "No tienes favoritas todavía",
+                    modifier = Modifier.padding(top = Dimens.mediumSpacing)
+                )
+            }
+
             else -> {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = Dimens.mediumSpacing)
+                        .padding(top = Dimens.mediumSpacing),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.smallSpacing)
                 ) {
-                    items(favorites) { favorite ->
-                        Card(
-                            modifier = Modifier.padding(vertical = Dimens.smallSpacing)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(Dimens.mediumSpacing)
-                            ) {
-                                Text(favorite.title)
-                                Text(favorite.releaseDate ?: "Sin fecha")
+                    items(favoriteMovies) { movie ->
+                        Column {
+                            MovieCard(
+                                movie = movie,
+                                onClick = { onMovieClick(movie.id) }
+                            )
 
-                                Button(
-                                    onClick = { onMovieClick(favorite.movieId) },
-                                    modifier = Modifier.padding(top = Dimens.smallSpacing)
-                                ) {
-                                    Text("Ver detalle")
-                                }
-
-                                Button(
-                                    onClick = {
-                                        val token = sessionStorage.getToken()
-                                        if (!token.isNullOrBlank()) {
-                                            scope.launch {
-                                                val removed = authApi.removeFavorite(token, favorite.movieId)
-                                                if (removed) {
-                                                    loadFavorites()
-                                                }
+                            Button(
+                                onClick = {
+                                    val token = sessionStorage.getToken()
+                                    if (!token.isNullOrBlank()) {
+                                        scope.launch {
+                                            val removed = authApi.removeFavorite(token, movie.id)
+                                            if (removed) {
+                                                loadFavorites()
                                             }
                                         }
-                                    },
-                                    modifier = Modifier.padding(top = Dimens.smallSpacing)
-                                ) {
-                                    Text("Quitar de favoritas")
-                                }
+                                    }
+                                },
+                                modifier = Modifier.padding(top = Dimens.smallSpacing)
+                            ) {
+                                Text("Quitar de favoritas")
                             }
                         }
                     }

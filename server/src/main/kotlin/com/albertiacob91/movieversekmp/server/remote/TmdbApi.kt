@@ -1,53 +1,37 @@
-package com.albertiacob91.movieversekmp.server.remote
+package com.albertiacob91.movieversekmp.server.data.remote
 
-import com.albertiacob91.movieversekmp.server.dto.movies.TmdbMovieDto
-import com.albertiacob91.movieversekmp.server.dto.movies.TmdbPopularResponseDto
+import com.albertiacob91.movieversekmp.server.data.remote.dto.TmdbMovieDetailDto
+import com.albertiacob91.movieversekmp.server.data.remote.dto.TmdbPopularResponseDto
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.serialization.json.Json
+import io.ktor.http.*
 
 class TmdbApi(
+    private val client: HttpClient,
     private val apiKey: String,
     private val baseUrl: String
 ) {
-    private val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(
-                Json {
-                    ignoreUnknownKeys = true
-                    isLenient = true
-                }
-            )
-        }
-    }
 
-    suspend fun getPopularMovies(): List<TmdbMovieDto> {
-        val response: TmdbPopularResponseDto = client.get("$baseUrl/movie/popular") {
-            parameter("api_key", apiKey)
-            parameter("language", "es-ES")
-        }.body()
-
-        return response.results
-    }
-
-    suspend fun getMovieDetail(movieId: Int): TmdbMovieDto {
-        return client.get("$baseUrl/movie/$movieId") {
+    suspend fun getPopularMovies(): TmdbPopularResponseDto {
+        return client.get("$baseUrl/movie/popular") {
             parameter("api_key", apiKey)
             parameter("language", "es-ES")
         }.body()
     }
 
-    suspend fun searchMovies(query: String): List<TmdbMovieDto> {
-        val response: TmdbPopularResponseDto = client.get("$baseUrl/search/movie") {
+    suspend fun searchMovies(query: String): TmdbPopularResponseDto {
+        return client.get("$baseUrl/search/movie") {
             parameter("api_key", apiKey)
             parameter("language", "es-ES")
             parameter("query", query)
         }.body()
+    }
 
-        return response.results
+    suspend fun getMovieDetail(movieId: Int): TmdbMovieDetailDto {
+        return client.get("$baseUrl/movie/$movieId") {
+            parameter("api_key", apiKey)
+            parameter("language", "es-ES")
+        }.body()
     }
 }
