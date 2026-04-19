@@ -8,12 +8,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
@@ -23,6 +23,7 @@ import com.albertiacob91.movieversekmp.data.remote.AuthApi
 import com.albertiacob91.movieversekmp.data.remote.CommentDto
 import com.albertiacob91.movieversekmp.data.remote.MovieDto
 import com.albertiacob91.movieversekmp.presentation.components.CommentItem
+import com.albertiacob91.movieversekmp.presentation.theme.Dimens
 import kotlinx.coroutines.launch
 
 @Composable
@@ -44,8 +45,6 @@ fun MovieDetailScreen(
     var favoriteMessage by remember { mutableStateOf("") }
     var commentMessage by remember { mutableStateOf("") }
     var isFavorite by remember { mutableStateOf(false) }
-
-    var imageError by remember { mutableStateOf("") }
 
     suspend fun loadComments() {
         comments = authApi.getComments(movieId)
@@ -79,14 +78,14 @@ fun MovieDetailScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(Dimens.screenPadding)
     ) {
         item {
             Button(onClick = onBackClick) {
                 Text("Volver")
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.mediumSpacing))
         }
 
         when {
@@ -109,32 +108,33 @@ fun MovieDetailScreen(
                             contentDescription = movie?.title,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(300.dp),
-                            contentScale = ContentScale.Crop,
-                            onSuccess = {
-                                imageError = ""
-                            },
-                            onError = {
-                                imageError = it.result.throwable.message ?: "Error cargando imagen"
-                            }
+                                .height(Dimens.posterDetailHeight),
+                            contentScale = ContentScale.Crop
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        if (imageError.isNotBlank()) {
-                            Text("Image error: $imageError")
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(Dimens.mediumSpacing))
                     }
 
-                    Text(movie?.title.orEmpty())
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(movie?.releaseDate ?: "Sin fecha")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(movie?.overview?.ifBlank { "Sin descripción" } ?: "Sin descripción")
+                    Text(
+                        text = movie?.title.orEmpty(),
+                        style = MaterialTheme.typography.headlineSmall
+                    )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(Dimens.smallSpacing))
+
+                    Text(
+                        text = movie?.releaseDate ?: "Sin fecha",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+
+                    Spacer(modifier = Modifier.height(Dimens.mediumSpacing))
+
+                    Text(
+                        text = movie?.overview?.ifBlank { "Sin descripción" } ?: "Sin descripción",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Spacer(modifier = Modifier.height(Dimens.largeSpacing))
 
                     Button(
                         onClick = {
@@ -168,21 +168,26 @@ fun MovieDetailScreen(
                         Text(if (isFavorite) "Quitar de favoritas" else "Añadir a favoritas")
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.smallSpacing))
                     Text(favoriteMessage)
 
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text("Comentarios")
+                    Spacer(modifier = Modifier.height(Dimens.largeSpacing))
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Comentarios",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    Spacer(modifier = Modifier.height(Dimens.smallSpacing))
 
                     OutlinedTextField(
                         value = commentText,
                         onValueChange = { commentText = it },
-                        label = { Text("Escribe un comentario") }
+                        label = { Text("Escribe un comentario") },
+                        modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.smallSpacing))
 
                     Button(
                         onClick = {
@@ -191,11 +196,9 @@ fun MovieDetailScreen(
                                 token.isNullOrBlank() -> {
                                     commentMessage = "Sesión no válida"
                                 }
-
                                 commentText.isBlank() -> {
                                     commentMessage = "El comentario no puede estar vacío"
                                 }
-
                                 else -> {
                                     scope.launch {
                                         commentMessage = "Enviando..."
@@ -217,10 +220,10 @@ fun MovieDetailScreen(
                         Text("Publicar comentario")
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.smallSpacing))
                     Text(commentMessage)
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(Dimens.mediumSpacing))
                 }
 
                 items(comments) { comment ->
