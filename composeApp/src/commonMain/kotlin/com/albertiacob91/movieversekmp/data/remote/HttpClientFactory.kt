@@ -7,13 +7,11 @@ import kotlinx.serialization.json.Json
 
 object HttpClientFactory {
     val client = HttpClient {
-        expectSuccess = false
-
         install(ContentNegotiation) {
             json(
                 Json {
                     ignoreUnknownKeys = true
-                    prettyPrint = true
+                    prettyPrint = false
                     isLenient = true
                 }
             )
