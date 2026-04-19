@@ -1,25 +1,26 @@
 package com.albertiacob91.movieversekmp.data.remote
 
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.request.delete
-import io.ktor.client.request.parameter
 
 class AuthApi {
 
     private val client = HttpClientFactory.client
+    private val baseUrl = getBaseUrl()
 
     suspend fun register(
         username: String,
         email: String,
         password: String
     ): AuthResponseDto {
-        val response = client.post("http://10.0.2.2:8081/auth/register") {
+        val response = client.post("$baseUrl/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(RegisterRequestDto(username, email, password))
         }
@@ -39,7 +40,7 @@ class AuthApi {
         email: String,
         password: String
     ): AuthResponseDto {
-        val response = client.post("http://10.0.2.2:8081/auth/login") {
+        val response = client.post("$baseUrl/auth/login") {
             contentType(ContentType.Application.Json)
             setBody(LoginRequestDto(email, password))
         }
@@ -54,8 +55,9 @@ class AuthApi {
             }
         }
     }
+
     suspend fun getMe(token: String): MeResponseDto? {
-        val response = client.get("http://10.0.2.2:8081/auth/me") {
+        val response = client.get("$baseUrl/auth/me") {
             header("Authorization", "Bearer $token")
         }
 
@@ -65,8 +67,9 @@ class AuthApi {
             null
         }
     }
+
     suspend fun getPopularMovies(): List<MovieDto> {
-        val response = client.get("http://10.0.2.2:8081/movies/popular")
+        val response = client.get("$baseUrl/movies/popular")
 
         return if (response.status.value in 200..299) {
             response.body()
@@ -76,7 +79,7 @@ class AuthApi {
     }
 
     suspend fun getMovieDetail(movieId: Int): MovieDto? {
-        val response = client.get("http://10.0.2.2:8081/movies/$movieId")
+        val response = client.get("$baseUrl/movies/$movieId")
 
         return if (response.status.value in 200..299) {
             response.body()
@@ -86,7 +89,7 @@ class AuthApi {
     }
 
     suspend fun getFavorites(token: String): List<FavoriteDto> {
-        val response = client.get("http://10.0.2.2:8081/favorites") {
+        val response = client.get("$baseUrl/favorites") {
             header("Authorization", "Bearer $token")
         }
 
@@ -98,7 +101,7 @@ class AuthApi {
     }
 
     suspend fun addFavorite(token: String, movieId: Int): Boolean {
-        val response = client.post("http://10.0.2.2:8081/favorites") {
+        val response = client.post("$baseUrl/favorites") {
             header("Authorization", "Bearer $token")
             contentType(ContentType.Application.Json)
             setBody(FavoriteRequestDto(movieId))
@@ -108,7 +111,7 @@ class AuthApi {
     }
 
     suspend fun removeFavorite(token: String, movieId: Int): Boolean {
-        val response = client.delete("http://10.0.2.2:8081/favorites/$movieId") {
+        val response = client.delete("$baseUrl/favorites/$movieId") {
             header("Authorization", "Bearer $token")
         }
 
@@ -116,7 +119,7 @@ class AuthApi {
     }
 
     suspend fun getComments(movieId: Int): List<CommentDto> {
-        val response = client.get("http://10.0.2.2:8081/comments/$movieId")
+        val response = client.get("$baseUrl/comments/$movieId")
 
         return if (response.status.value in 200..299) {
             response.body()
@@ -126,7 +129,7 @@ class AuthApi {
     }
 
     suspend fun addComment(token: String, movieId: Int, content: String): Boolean {
-        val response = client.post("http://10.0.2.2:8081/comments") {
+        val response = client.post("$baseUrl/comments") {
             header("Authorization", "Bearer $token")
             contentType(ContentType.Application.Json)
             setBody(CommentRequestDto(movieId, content))
@@ -136,7 +139,7 @@ class AuthApi {
     }
 
     suspend fun searchMovies(query: String): List<MovieDto> {
-        val response = client.get("http://10.0.2.2:8081/movies/search") {
+        val response = client.get("$baseUrl/movies/search") {
             parameter("query", query)
         }
 
