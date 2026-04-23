@@ -6,6 +6,8 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import com.albertiacob91.movieversekmp.server.data.remote.dto.TmdbCreditsDto
+import com.albertiacob91.movieversekmp.server.data.remote.dto.TmdbVideosDto
 
 class TmdbApi(
     private val client: HttpClient,
@@ -30,6 +32,20 @@ class TmdbApi(
 
     suspend fun getMovieDetail(movieId: Int): TmdbMovieDetailDto {
         return client.get("$baseUrl/movie/$movieId") {
+            parameter("api_key", apiKey)
+            parameter("language", "es-ES")
+        }.body()
+    }
+
+    suspend fun getMovieCredits(movieId: Int): TmdbCreditsDto {
+        return client.get("$baseUrl/movie/$movieId/credits") {
+            parameter("api_key", apiKey)
+            parameter("language", "es-ES")
+        }.body()
+    }
+
+    suspend fun getMovieVideos(movieId: Int): TmdbVideosDto {
+        return client.get("$baseUrl/movie/$movieId/videos") {
             parameter("api_key", apiKey)
             parameter("language", "es-ES")
         }.body()

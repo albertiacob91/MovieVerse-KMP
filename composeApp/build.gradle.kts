@@ -35,6 +35,8 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation("io.ktor:ktor-client-cio:3.4.2")
             implementation("io.coil-kt.coil3:coil-network-okhttp:3.4.0")
+            implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:13.0.0")
+
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
