@@ -11,5 +11,7 @@ data class MovieDto(
     val releaseDate: String? = null,
     val voteAverage: Double? = null,
     val runtime: Int? = null,
-    val genres: List<String> = emptyList()
+    val genres: List<String> = emptyList(),
+    val cast: List<CastMemberDto> = emptyList(),
+    val trailerUrl: String? = null
 )
