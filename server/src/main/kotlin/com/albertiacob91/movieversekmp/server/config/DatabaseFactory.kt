@@ -1,14 +1,29 @@
 package com.albertiacob91.movieversekmp.server.config
 
+import com.albertiacob91.movieversekmp.server.data.model.CommentsTable
+import com.albertiacob91.movieversekmp.server.data.model.FavoritesTable
+import com.albertiacob91.movieversekmp.server.data.model.SessionsTable
+import com.albertiacob91.movieversekmp.server.data.model.UsersTable
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.transaction
 
 object DatabaseFactory {
 
     fun init() {
         val dataSource = hikari()
         Database.connect(dataSource)
+
+        transaction {
+            SchemaUtils.create(
+                UsersTable,
+                SessionsTable,
+                FavoritesTable,
+                CommentsTable
+            )
+        }
     }
 
     private fun hikari(): HikariDataSource {
