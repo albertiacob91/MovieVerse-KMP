@@ -12,15 +12,8 @@ object DatabaseFactory {
     }
 
     private fun hikari(): HikariDataSource {
-        val rawUrl = System.getenv("JDBC_DATABASE_URL")
+        val jdbcUrl = System.getenv("JDBC_DATABASE_URL")
             ?: "jdbc:postgresql://localhost:5432/movieverse_db"
-
-        val jdbcUrl = when {
-            rawUrl.startsWith("jdbc:postgresql://") -> rawUrl
-            rawUrl.startsWith("postgresql://") -> "jdbc:$rawUrl"
-            rawUrl.startsWith("postgres://") -> "jdbc:postgresql://${rawUrl.removePrefix("postgres://")}"
-            else -> rawUrl
-        }
 
         val dbUser = System.getenv("DB_USER")
             ?: "movieverse_user"
@@ -30,7 +23,7 @@ object DatabaseFactory {
 
         val config = HikariConfig().apply {
             driverClassName = "org.postgresql.Driver"
-            this.jdbcUrl = jdbcUrl
+            this.jdbcUrl = jdbcUrl.trim()
             username = dbUser.trim()
             password = dbPassword.trim()
             maximumPoolSize = 10
