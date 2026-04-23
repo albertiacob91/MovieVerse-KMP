@@ -12,11 +12,20 @@ object DatabaseFactory {
     }
 
     private fun hikari(): HikariDataSource {
+        val jdbcUrl = System.getenv("JDBC_DATABASE_URL")
+            ?: "jdbc:postgresql://localhost:5432/movieverse_db"
+
+        val dbUser = System.getenv("DB_USER")
+            ?: "movieverse_user"
+
+        val dbPassword = System.getenv("DB_PASSWORD")
+            ?: "123456"
+
         val config = HikariConfig().apply {
             driverClassName = "org.postgresql.Driver"
-            jdbcUrl = "jdbc:postgresql://localhost:5432/movieverse_db"
-            username = "movieverse_user"
-            password = "123456"
+            this.jdbcUrl = jdbcUrl
+            username = dbUser
+            password = dbPassword
             maximumPoolSize = 10
             isAutoCommit = false
             transactionIsolation = "TRANSACTION_REPEATABLE_READ"
