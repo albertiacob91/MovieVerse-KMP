@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -22,35 +24,85 @@ fun MoviesScreen(
     onMovieClick: (Int) -> Unit
 ) {
     val authApi = remember { AuthApi() }
+    val listState = rememberLazyListState()
 
     var movies by remember { mutableStateOf<List<MovieDto>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var isLoadingMore by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    var currentPage by remember { mutableStateOf(1) }
+    var endReached by remember { mutableStateOf(false) }
 
-    suspend fun loadPopularMovies() {
+    suspend fun loadFirstPage() {
         isLoading = true
+        isLoadingMore = false
         errorMessage = ""
-        movies = authApi.getPopularMovies()
+        currentPage = 1
+        endReached = false
+
+        val firstPage = if (searchQuery.isBlank()) {
+            authApi.getPopularMovies(page = 1)
+        } else {
+            authApi.searchMovies(searchQuery, page = 1)
+        }
+
+        movies = firstPage
+        endReached = firstPage.isEmpty()
         isLoading = false
     }
 
-    suspend fun searchMovies(query: String) {
-        isLoading = true
+    suspend fun loadNextPage() {
+        if (isLoading || isLoadingMore || endReached) return
+
+        isLoadingMore = true
         errorMessage = ""
-        movies = authApi.searchMovies(query)
-        isLoading = false
+
+        val nextPage = currentPage + 1
+
+        val newMovies = if (searchQuery.isBlank()) {
+            authApi.getPopularMovies(page = nextPage)
+        } else {
+            authApi.searchMovies(searchQuery, page = nextPage)
+        }
+
+        if (newMovies.isEmpty()) {
+            endReached = true
+        } else {
+            movies = movies + newMovies
+            currentPage = nextPage
+        }
+
+        isLoadingMore = false
     }
 
     LaunchedEffect(searchQuery) {
         runCatching {
-            if (searchQuery.isBlank()) {
-                loadPopularMovies()
-            } else {
-                searchMovies(searchQuery)
-            }
+            loadFirstPage()
         }.onFailure {
             errorMessage = it.message ?: "Error cargando películas"
             isLoading = false
+            isLoadingMore = false
+        }
+    }
+
+    LaunchedEffect(listState, movies, isLoading, isLoadingMore, endReached) {
+        snapshotFlow {
+            val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+            val totalItemsCount = listState.layoutInfo.totalItemsCount
+            lastVisibleItemIndex to totalItemsCount
+        }.collect { (lastVisibleItemIndex, totalItemsCount) ->
+            if (
+                lastVisibleItemIndex != null &&
+                totalItemsCount > 0 &&
+                lastVisibleItemIndex >= totalItemsCount - 3
+            ) {
+                runCatching {
+                    loadNextPage()
+                }.onFailure {
+                    errorMessage = it.message ?: "Error cargando más películas"
+                    isLoadingMore = false
+                }
+            }
         }
     }
 
@@ -68,7 +120,7 @@ fun MoviesScreen(
                 )
             }
 
-            errorMessage.isNotBlank() -> {
+            errorMessage.isNotBlank() && movies.isEmpty() -> {
                 Text(
                     text = "Error: $errorMessage",
                     modifier = Modifier.padding(top = Dimens.mediumSpacing)
@@ -88,14 +140,23 @@ fun MoviesScreen(
 
             else -> {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(Dimens.smallSpacing)
                 ) {
-                    items(movies) { movie ->
+                    itemsIndexed(movies) { _, movie ->
                         MovieCard(
                             movie = movie,
                             onClick = { onMovieClick(movie.id) }
                         )
+                    }
+
+                    if (isLoadingMore) {
+                        item {
+                            CircularProgressIndicator(
+                                modifier = Modifier.padding(vertical = Dimens.mediumSpacing)
+                            )
+                        }
                     }
                 }
             }

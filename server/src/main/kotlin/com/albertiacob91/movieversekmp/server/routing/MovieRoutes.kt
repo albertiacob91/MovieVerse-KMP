@@ -13,7 +13,9 @@ fun Route.movieRoutes(tmdbApi: TmdbApi) {
     route("/movies") {
 
         get("/popular") {
-            val movies = tmdbApi.getPopularMovies().results.take(20).map { movie ->
+            val page = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+
+            val movies = tmdbApi.getPopularMovies(page).results.map { movie ->
                 val detail = runCatching { tmdbApi.getMovieDetail(movie.id) }.getOrNull()
 
                 MovieResponse(
@@ -25,6 +27,7 @@ fun Route.movieRoutes(tmdbApi: TmdbApi) {
                     voteAverage = movie.voteAverage,
                     runtime = detail?.runtime,
                     genres = detail?.genres?.map { it.name } ?: emptyList(),
+                    cast = emptyList(),
                     trailerUrl = null
                 )
             }
@@ -34,13 +37,14 @@ fun Route.movieRoutes(tmdbApi: TmdbApi) {
 
         get("/search") {
             val query = call.request.queryParameters["query"].orEmpty().trim()
+            val page = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
 
             if (query.isBlank()) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Query is required"))
                 return@get
             }
 
-            val movies = tmdbApi.searchMovies(query).results.take(20).map { movie ->
+            val movies = tmdbApi.searchMovies(query, page).results.map { movie ->
                 val detail = runCatching { tmdbApi.getMovieDetail(movie.id) }.getOrNull()
 
                 MovieResponse(
@@ -52,6 +56,7 @@ fun Route.movieRoutes(tmdbApi: TmdbApi) {
                     voteAverage = movie.voteAverage,
                     runtime = detail?.runtime,
                     genres = detail?.genres?.map { it.name } ?: emptyList(),
+                    cast = emptyList(),
                     trailerUrl = null
                 )
             }
