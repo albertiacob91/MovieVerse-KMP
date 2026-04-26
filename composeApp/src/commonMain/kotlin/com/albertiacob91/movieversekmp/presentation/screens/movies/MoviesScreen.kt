@@ -7,72 +7,50 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.albertiacob91.movieversekmp.data.remote.AuthApi
 import com.albertiacob91.movieversekmp.data.remote.MovieDto
 import com.albertiacob91.movieversekmp.presentation.components.MovieCard
 import com.albertiacob91.movieversekmp.presentation.theme.Dimens
-import kotlinx.coroutines.launch
 
 @Composable
 fun MoviesScreen(
     contentPadding: PaddingValues,
-    searchVisible: Boolean,
+    searchQuery: String,
     onMovieClick: (Int) -> Unit
 ) {
     val authApi = remember { AuthApi() }
-    val scope = rememberCoroutineScope()
 
     var movies by remember { mutableStateOf<List<MovieDto>>(emptyList()) }
-    var isLoading by rememberSaveable { mutableStateOf(true) }
-    var errorMessage by rememberSaveable { mutableStateOf("") }
-    var searchQuery by rememberSaveable { mutableStateOf("") }
-    var hasLoadedInitially by rememberSaveable { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf("") }
 
-    fun loadPopularMovies() {
-        scope.launch {
-            isLoading = true
-            runCatching {
-                authApi.getPopularMovies()
-            }.onSuccess {
-                movies = it
-                errorMessage = ""
-            }.onFailure {
-                errorMessage = it.stackTraceToString()
-            }
-            isLoading = false
-        }
+    suspend fun loadPopularMovies() {
+        isLoading = true
+        errorMessage = ""
+        movies = authApi.getPopularMovies()
+        isLoading = false
     }
 
-    fun searchMovies() {
-        scope.launch {
-            isLoading = true
-            runCatching {
-                authApi.searchMovies(searchQuery)
-            }.onSuccess {
-                movies = it
-                errorMessage = ""
-            }.onFailure {
-                errorMessage = it.message ?: "Error buscando películas"
-            }
-            isLoading = false
-        }
+    suspend fun searchMovies(query: String) {
+        isLoading = true
+        errorMessage = ""
+        movies = authApi.searchMovies(query)
+        isLoading = false
     }
 
-    LaunchedEffect(Unit) {
-        if (!hasLoadedInitially || movies.isEmpty()) {
+    LaunchedEffect(searchQuery) {
+        runCatching {
             if (searchQuery.isBlank()) {
                 loadPopularMovies()
             } else {
-                searchMovies()
+                searchMovies(searchQuery)
             }
-            hasLoadedInitially = true
+        }.onFailure {
+            errorMessage = it.message ?: "Error cargando películas"
+            isLoading = false
         }
     }
 
@@ -82,28 +60,6 @@ fun MoviesScreen(
             .padding(contentPadding)
             .padding(horizontal = Dimens.screenPadding)
     ) {
-        if (searchVisible) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = { Text("Buscar películas") },
-                modifier = Modifier.padding(top = Dimens.mediumSpacing)
-            )
-
-            Button(
-                onClick = {
-                    if (searchQuery.isBlank()) {
-                        loadPopularMovies()
-                    } else {
-                        searchMovies()
-                    }
-                },
-                modifier = Modifier.padding(top = Dimens.smallSpacing)
-            ) {
-                Text("Buscar")
-            }
-        }
-
         when {
             isLoading -> {
                 Text(
@@ -119,12 +75,22 @@ fun MoviesScreen(
                 )
             }
 
+            movies.isEmpty() -> {
+                Text(
+                    text = if (searchQuery.isBlank()) {
+                        "No hay películas disponibles"
+                    } else {
+                        "No se encontraron resultados"
+                    },
+                    modifier = Modifier.padding(top = Dimens.mediumSpacing)
+                )
+            }
+
             else -> {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = Dimens.mediumSpacing),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)                ) {
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.smallSpacing)
+                ) {
                     items(movies) { movie ->
                         MovieCard(
                             movie = movie,

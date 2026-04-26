@@ -1,7 +1,9 @@
 package com.albertiacob91.movieversekmp.navigation
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
@@ -10,11 +12,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.albertiacob91.movieversekmp.data.local.SessionStorage
 import com.albertiacob91.movieversekmp.data.remote.AuthApi
 import com.albertiacob91.movieversekmp.presentation.components.LoadingScreen
@@ -44,7 +52,11 @@ fun MovieVerseNavigation() {
     var rootScreen by remember { mutableStateOf<RootScreen?>(null) }
     var authFlowScreen by remember { mutableStateOf(AuthFlowScreen.Login) }
     var movieScreen by remember { mutableStateOf<MovieScreen>(MovieScreen.Home) }
+
+    var lastListScreen by remember { mutableStateOf<MovieScreen>(MovieScreen.Home) }
+
     var searchVisible by rememberSaveable { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         val token = sessionStorage.getToken()
@@ -82,7 +94,9 @@ fun MovieVerseNavigation() {
                                 if (!response.token.isNullOrBlank()) {
                                     sessionStorage.saveToken(response.token)
                                     movieScreen = MovieScreen.Home
+                                    lastListScreen = MovieScreen.Home
                                     searchVisible = false
+                                    searchQuery = ""
                                     rootScreen = RootScreen.Home
                                 }
 
@@ -118,7 +132,7 @@ fun MovieVerseNavigation() {
                     MovieDetailScreen(
                         movieId = currentMovieScreen.movieId,
                         onBackClick = {
-                            movieScreen = MovieScreen.Home
+                            movieScreen = lastListScreen
                         }
                     )
                 }
@@ -129,39 +143,93 @@ fun MovieVerseNavigation() {
                     Scaffold(
                         topBar = {
                             TopAppBar(
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = Color.Black,
+                                    titleContentColor = Color.White,
+                                    actionIconContentColor = Color.White,
+                                    navigationIconContentColor = Color.White
+                                ),
                                 title = {
-                                    Text(
-                                        when (movieScreen) {
-                                            MovieScreen.Home -> "MovieVerse"
-                                            MovieScreen.Favorites -> "Favoritas"
-                                            MovieScreen.Profile -> "Perfil"
-                                            is MovieScreen.Detail -> ""
-                                        }
-                                    )
+                                    if (movieScreen == MovieScreen.Home && searchVisible) {
+                                        OutlinedTextField(
+                                            value = searchQuery,
+                                            onValueChange = { searchQuery = it },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true,
+                                            placeholder = {
+                                                Text("Buscar película...")
+                                            },
+                                            colors = TextFieldDefaults.colors(
+                                                focusedContainerColor = Color.Transparent,
+                                                unfocusedContainerColor = Color.Transparent,
+                                                focusedTextColor = Color.White,
+                                                unfocusedTextColor = Color.White,
+                                                focusedPlaceholderColor = Color.LightGray,
+                                                unfocusedPlaceholderColor = Color.LightGray,
+                                                focusedIndicatorColor = Color.White,
+                                                unfocusedIndicatorColor = Color.LightGray,
+                                                cursorColor = Color.White
+                                            )
+                                        )
+                                    } else {
+                                        Text(
+                                            when (movieScreen) {
+                                                MovieScreen.Home -> "MOVIEVERSE"
+                                                MovieScreen.Favorites -> "FAVORITAS"
+                                                MovieScreen.Profile -> "PERFIL"
+                                                is MovieScreen.Detail -> ""
+                                            }
+                                        )
+                                    }
                                 },
                                 actions = {
                                     if (movieScreen == MovieScreen.Home) {
-                                        IconButton(
-                                            onClick = {
-                                                searchVisible = !searchVisible
+                                        if (searchVisible) {
+                                            IconButton(
+                                                onClick = {
+                                                    searchVisible = false
+                                                    searchQuery = ""
+                                                }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Close,
+                                                    contentDescription = "Cerrar búsqueda"
+                                                )
                                             }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Search,
-                                                contentDescription = "Buscar"
-                                            )
+                                        } else {
+                                            IconButton(
+                                                onClick = {
+                                                    searchVisible = true
+                                                }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Search,
+                                                    contentDescription = "Buscar"
+                                                )
+                                            }
                                         }
                                     }
                                 }
                             )
                         },
                         bottomBar = {
-                            NavigationBar {
+                            NavigationBar(
+                                containerColor = Color.Black,
+                                contentColor = Color.White
+                            ) {
                                 NavigationBarItem(
                                     selected = movieScreen == MovieScreen.Home,
                                     onClick = {
                                         movieScreen = MovieScreen.Home
+                                        lastListScreen = MovieScreen.Home
                                     },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = Color.White,
+                                        selectedTextColor = Color.White,
+                                        unselectedIconColor = Color.LightGray,
+                                        unselectedTextColor = Color.LightGray,
+                                        indicatorColor = Color.DarkGray
+                                    ),
                                     icon = {
                                         Icon(Icons.Default.Home, contentDescription = "Home")
                                     },
@@ -172,7 +240,15 @@ fun MovieVerseNavigation() {
                                     selected = movieScreen == MovieScreen.Favorites,
                                     onClick = {
                                         movieScreen = MovieScreen.Favorites
+                                        lastListScreen = MovieScreen.Favorites
                                     },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = Color.White,
+                                        selectedTextColor = Color.White,
+                                        unselectedIconColor = Color.LightGray,
+                                        unselectedTextColor = Color.LightGray,
+                                        indicatorColor = Color.DarkGray
+                                    ),
                                     icon = {
                                         Icon(Icons.Default.Favorite, contentDescription = "Favoritos")
                                     },
@@ -184,6 +260,13 @@ fun MovieVerseNavigation() {
                                     onClick = {
                                         movieScreen = MovieScreen.Profile
                                     },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = Color.White,
+                                        selectedTextColor = Color.White,
+                                        unselectedIconColor = Color.LightGray,
+                                        unselectedTextColor = Color.LightGray,
+                                        indicatorColor = Color.DarkGray
+                                    ),
                                     icon = {
                                         Icon(Icons.Default.AccountCircle, contentDescription = "Perfil")
                                     },
@@ -196,8 +279,9 @@ fun MovieVerseNavigation() {
                             MovieScreen.Home -> {
                                 MoviesScreen(
                                     contentPadding = innerPadding,
-                                    searchVisible = searchVisible,
+                                    searchQuery = searchQuery,
                                     onMovieClick = { movieId ->
+                                        lastListScreen = MovieScreen.Home
                                         movieScreen = MovieScreen.Detail(movieId)
                                     }
                                 )
@@ -207,6 +291,7 @@ fun MovieVerseNavigation() {
                                 FavoritesScreen(
                                     contentPadding = innerPadding,
                                     onMovieClick = { movieId ->
+                                        lastListScreen = MovieScreen.Favorites
                                         movieScreen = MovieScreen.Detail(movieId)
                                     }
                                 )
@@ -219,7 +304,9 @@ fun MovieVerseNavigation() {
                                         sessionStorage.clearSession()
                                         authFlowScreen = AuthFlowScreen.Login
                                         movieScreen = MovieScreen.Home
+                                        lastListScreen = MovieScreen.Home
                                         searchVisible = false
+                                        searchQuery = ""
                                         rootScreen = RootScreen.Auth
                                     }
                                 )
