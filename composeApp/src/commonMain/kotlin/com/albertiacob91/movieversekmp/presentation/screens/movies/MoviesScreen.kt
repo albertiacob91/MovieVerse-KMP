@@ -4,50 +4,78 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.albertiacob91.movieversekmp.data.remote.AuthApi
 import com.albertiacob91.movieversekmp.data.remote.MovieDto
 import com.albertiacob91.movieversekmp.presentation.components.MovieCard
 import com.albertiacob91.movieversekmp.presentation.theme.Dimens
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 @Composable
 fun MoviesScreen(
     contentPadding: PaddingValues,
     searchQuery: String,
+    listState: LazyListState,
     onMovieClick: (Int) -> Unit
 ) {
     val authApi = remember { AuthApi() }
-    val listState = rememberLazyListState()
 
     var movies by remember { mutableStateOf<List<MovieDto>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isLoadingMore by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    var currentPage by remember { mutableStateOf(1) }
-    var endReached by remember { mutableStateOf(false) }
 
-    suspend fun loadFirstPage() {
+    var currentPage by remember { mutableStateOf(0) }
+    var pageSize by remember { mutableStateOf(20) }
+    var endReached by remember { mutableStateOf(false) }
+    var nextTriggerIndex by remember { mutableStateOf(20) }
+
+    suspend fun fetchPage(page: Int): List<MovieDto> {
+        return if (searchQuery.isBlank()) {
+            authApi.getPopularMovies(page = page)
+        } else {
+            authApi.searchMovies(searchQuery, page = page)
+        }
+    }
+
+    suspend fun loadInitialPages() {
         isLoading = true
         isLoadingMore = false
         errorMessage = ""
-        currentPage = 1
         endReached = false
+        currentPage = 0
+        nextTriggerIndex = 20
 
-        val firstPage = if (searchQuery.isBlank()) {
-            authApi.getPopularMovies(page = 1)
-        } else {
-            authApi.searchMovies(searchQuery, page = 1)
+        val firstPage = fetchPage(1)
+        pageSize = if (firstPage.isNotEmpty()) firstPage.size else 20
+
+        if (firstPage.isEmpty()) {
+            movies = emptyList()
+            currentPage = 1
+            endReached = true
+            isLoading = false
+            return
         }
 
-        movies = firstPage
-        endReached = firstPage.isEmpty()
+        val secondPage = fetchPage(2)
+
+        movies = firstPage + secondPage
+        currentPage = if (secondPage.isNotEmpty()) 2 else 1
+        endReached = secondPage.isEmpty()
+
+        nextTriggerIndex = pageSize
         isLoading = false
     }
 
@@ -57,19 +85,15 @@ fun MoviesScreen(
         isLoadingMore = true
         errorMessage = ""
 
-        val nextPage = currentPage + 1
-
-        val newMovies = if (searchQuery.isBlank()) {
-            authApi.getPopularMovies(page = nextPage)
-        } else {
-            authApi.searchMovies(searchQuery, page = nextPage)
-        }
+        val pageToLoad = currentPage + 1
+        val newMovies = fetchPage(pageToLoad)
 
         if (newMovies.isEmpty()) {
             endReached = true
         } else {
             movies = movies + newMovies
-            currentPage = nextPage
+            currentPage = pageToLoad
+            nextTriggerIndex += pageSize
         }
 
         isLoadingMore = false
@@ -77,7 +101,7 @@ fun MoviesScreen(
 
     LaunchedEffect(searchQuery) {
         runCatching {
-            loadFirstPage()
+            loadInitialPages()
         }.onFailure {
             errorMessage = it.message ?: "Error cargando películas"
             isLoading = false
@@ -85,25 +109,27 @@ fun MoviesScreen(
         }
     }
 
-    LaunchedEffect(listState, movies, isLoading, isLoadingMore, endReached) {
+    LaunchedEffect(listState, movies, isLoading, isLoadingMore, endReached, nextTriggerIndex) {
         snapshotFlow {
-            val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-            val totalItemsCount = listState.layoutInfo.totalItemsCount
-            lastVisibleItemIndex to totalItemsCount
-        }.collect { (lastVisibleItemIndex, totalItemsCount) ->
-            if (
-                lastVisibleItemIndex != null &&
-                totalItemsCount > 0 &&
-                lastVisibleItemIndex >= totalItemsCount - 3
-            ) {
-                runCatching {
-                    loadNextPage()
-                }.onFailure {
-                    errorMessage = it.message ?: "Error cargando más películas"
-                    isLoadingMore = false
+            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        }
+            .map { it ?: -1 }
+            .distinctUntilChanged()
+            .collectLatest { lastVisibleItemIndex ->
+                if (
+                    lastVisibleItemIndex >= nextTriggerIndex &&
+                    !isLoading &&
+                    !isLoadingMore &&
+                    !endReached
+                ) {
+                    runCatching {
+                        loadNextPage()
+                    }.onFailure {
+                        errorMessage = it.message ?: "Error cargando más películas"
+                        isLoadingMore = false
+                    }
                 }
             }
-        }
     }
 
     Column(
@@ -153,9 +179,20 @@ fun MoviesScreen(
 
                     if (isLoadingMore) {
                         item {
-                            CircularProgressIndicator(
-                                modifier = Modifier.padding(vertical = Dimens.mediumSpacing)
-                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = Dimens.mediumSpacing),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                CircularProgressIndicator()
+
+                                Text(
+                                    text = "Cargando más resultados...",
+                                    modifier = Modifier.padding(top = 12.dp)
+                                )
+                            }
                         }
                     }
                 }
