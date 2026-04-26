@@ -92,29 +92,10 @@ fun FavoritesScreen(
                     verticalArrangement = Arrangement.spacedBy(Dimens.smallSpacing)
                 ) {
                     items(favoriteMovies) { movie ->
-                        Column {
-                            MovieCard(
-                                movie = movie,
-                                onClick = { onMovieClick(movie.id) }
-                            )
-
-                            Button(
-                                onClick = {
-                                    val token = sessionStorage.getToken()
-                                    if (!token.isNullOrBlank()) {
-                                        scope.launch {
-                                            val removed = authApi.removeFavorite(token, movie.id)
-                                            if (removed) {
-                                                loadFavorites()
-                                            }
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.padding(top = Dimens.smallSpacing)
-                            ) {
-                                Text("Quitar de favoritas")
-                            }
-                        }
+                        MovieCard(
+                            movie = movie,
+                            onClick = { onMovieClick(movie.id) }
+                        )
                     }
                 }
             }
