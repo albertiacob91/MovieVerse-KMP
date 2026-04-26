@@ -1,6 +1,7 @@
 package com.albertiacob91.movieversekmp.navigation
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Close
@@ -57,6 +58,8 @@ fun MovieVerseNavigation() {
 
     var searchVisible by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
+
+    val homeListState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
         val token = sessionStorage.getToken()
@@ -280,6 +283,7 @@ fun MovieVerseNavigation() {
                                 MoviesScreen(
                                     contentPadding = innerPadding,
                                     searchQuery = searchQuery,
+                                    listState = homeListState,
                                     onMovieClick = { movieId ->
                                         lastListScreen = MovieScreen.Home
                                         movieScreen = MovieScreen.Detail(movieId)
