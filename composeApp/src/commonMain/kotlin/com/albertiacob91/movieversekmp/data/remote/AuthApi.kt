@@ -68,8 +68,10 @@ class AuthApi {
         }
     }
 
-    suspend fun getPopularMovies(): List<MovieDto> {
-        val response = client.get("$baseUrl/movies/popular")
+    suspend fun getPopularMovies(page: Int = 1): List<MovieDto> {
+        val response = client.get("$baseUrl/movies/popular") {
+            parameter("page", page)
+        }
 
         return if (response.status.value in 200..299) {
             response.body()
@@ -138,9 +140,10 @@ class AuthApi {
         return response.status.value in 200..299
     }
 
-    suspend fun searchMovies(query: String): List<MovieDto> {
+    suspend fun searchMovies(query: String, page: Int = 1): List<MovieDto> {
         val response = client.get("$baseUrl/movies/search") {
             parameter("query", query)
+            parameter("page", page)
         }
 
         return if (response.status.value in 200..299) {
