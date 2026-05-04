@@ -9,6 +9,7 @@ import com.zaxxer.hikari.HikariDataSource
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
+import com.albertiacob91.movieversekmp.server.data.model.ForumChatsTable
 
 object DatabaseFactory {
 
@@ -21,7 +22,8 @@ object DatabaseFactory {
                 UsersTable,
                 SessionsTable,
                 FavoritesTable,
-                CommentsTable
+                CommentsTable,
+                ForumChatsTable
             )
         }
     }
