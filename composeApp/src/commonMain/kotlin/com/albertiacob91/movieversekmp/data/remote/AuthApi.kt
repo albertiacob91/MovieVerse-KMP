@@ -157,4 +157,28 @@ class AuthApi {
         val favorites = getFavorites(token)
         return favorites.any { it.movieId == movieId }
     }
+
+    suspend fun getForumChats(): List<ForumChatDto> {
+        val response = client.get("$baseUrl/forum/chats")
+
+        return if (response.status.value in 200..299) {
+            response.body()
+        } else {
+            emptyList()
+        }
+    }
+
+    suspend fun createForumChat(token: String, title: String): ForumChatDto? {
+        val response = client.post("$baseUrl/forum/chats") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(CreateForumChatRequestDto(title))
+        }
+
+        return if (response.status.value in 200..299) {
+            response.body()
+        } else {
+            null
+        }
+    }
 }
