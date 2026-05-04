@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -20,8 +21,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.albertiacob91.movieversekmp.data.local.SessionStorage
@@ -29,6 +35,7 @@ import com.albertiacob91.movieversekmp.data.remote.AuthApi
 import com.albertiacob91.movieversekmp.presentation.components.LoadingScreen
 import com.albertiacob91.movieversekmp.presentation.screens.auth.LoginScreen
 import com.albertiacob91.movieversekmp.presentation.screens.auth.RegisterScreen
+import com.albertiacob91.movieversekmp.presentation.screens.forum.ForumScreen
 import com.albertiacob91.movieversekmp.presentation.screens.movies.FavoritesScreen
 import com.albertiacob91.movieversekmp.presentation.screens.movies.MovieDetailScreen
 import com.albertiacob91.movieversekmp.presentation.screens.movies.MoviesScreen
@@ -142,6 +149,7 @@ fun MovieVerseNavigation() {
 
                 MovieScreen.Home,
                 MovieScreen.Favorites,
+                MovieScreen.Forum,
                 MovieScreen.Profile -> {
                     Scaffold(
                         topBar = {
@@ -179,6 +187,7 @@ fun MovieVerseNavigation() {
                                             when (movieScreen) {
                                                 MovieScreen.Home -> "MOVIEVERSE"
                                                 MovieScreen.Favorites -> "FAVORITAS"
+                                                MovieScreen.Forum -> "FORO"
                                                 MovieScreen.Profile -> "PERFIL"
                                                 is MovieScreen.Detail -> ""
                                             }
@@ -259,6 +268,24 @@ fun MovieVerseNavigation() {
                                 )
 
                                 NavigationBarItem(
+                                    selected = movieScreen == MovieScreen.Forum,
+                                    onClick = {
+                                        movieScreen = MovieScreen.Forum
+                                    },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = Color.White,
+                                        selectedTextColor = Color.White,
+                                        unselectedIconColor = Color.LightGray,
+                                        unselectedTextColor = Color.LightGray,
+                                        indicatorColor = Color.DarkGray
+                                    ),
+                                    icon = {
+                                        Icon(Icons.Default.Forum, contentDescription = "Foro")
+                                    },
+                                    label = { Text("Foro") }
+                                )
+
+                                NavigationBarItem(
                                     selected = movieScreen == MovieScreen.Profile,
                                     onClick = {
                                         movieScreen = MovieScreen.Profile
@@ -298,6 +325,12 @@ fun MovieVerseNavigation() {
                                         lastListScreen = MovieScreen.Favorites
                                         movieScreen = MovieScreen.Detail(movieId)
                                     }
+                                )
+                            }
+
+                            MovieScreen.Forum -> {
+                                ForumScreen(
+                                    contentPadding = innerPadding
                                 )
                             }
 

@@ -18,6 +18,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import kotlinx.serialization.json.Json
+import com.albertiacob91.movieversekmp.server.routing.forumRoutes
 
 fun main(args: Array<String>) {
     EngineMain.main(args)
@@ -70,5 +71,6 @@ fun Application.module() {
         favoriteRoutes()
         commentRoutes()
         movieRoutes(tmdbApi)
+        forumRoutes()
     }
 }
