@@ -181,4 +181,32 @@ class AuthApi {
             null
         }
     }
+
+    suspend fun getForumMessages(chatId: String): List<ForumMessageDto> {
+        val response = client.get("$baseUrl/forum/chats/$chatId/messages")
+
+        return if (response.status.value in 200..299) {
+            response.body()
+        } else {
+            emptyList()
+        }
+    }
+
+    suspend fun createForumMessage(
+        token: String,
+        chatId: String,
+        content: String
+    ): ForumMessageDto? {
+        val response = client.post("$baseUrl/forum/chats/$chatId/messages") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(CreateForumMessageRequestDto(content))
+        }
+
+        return if (response.status.value in 200..299) {
+            response.body()
+        } else {
+            null
+        }
+    }
 }

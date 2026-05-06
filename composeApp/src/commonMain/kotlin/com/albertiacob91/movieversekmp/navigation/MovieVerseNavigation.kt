@@ -40,6 +40,7 @@ import com.albertiacob91.movieversekmp.presentation.screens.movies.FavoritesScre
 import com.albertiacob91.movieversekmp.presentation.screens.movies.MovieDetailScreen
 import com.albertiacob91.movieversekmp.presentation.screens.movies.MoviesScreen
 import com.albertiacob91.movieversekmp.presentation.screens.profile.ProfileScreen
+import com.albertiacob91.movieversekmp.presentation.screens.forum.ForumChatDetailScreen
 
 private enum class RootScreen {
     Auth,
@@ -147,6 +148,13 @@ fun MovieVerseNavigation() {
                     )
                 }
 
+                is MovieScreen.ForumChatDetail -> {
+                    ForumChatDetailScreen(
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(),
+                        chatId = currentMovieScreen.chatId
+                    )
+                }
+
                 MovieScreen.Home,
                 MovieScreen.Favorites,
                 MovieScreen.Forum,
@@ -189,7 +197,7 @@ fun MovieVerseNavigation() {
                                                 MovieScreen.Favorites -> "FAVORITAS"
                                                 MovieScreen.Forum -> "FORO"
                                                 MovieScreen.Profile -> "PERFIL"
-                                                is MovieScreen.Detail -> ""
+                                                else -> ""
                                             }
                                         )
                                     }
@@ -330,7 +338,14 @@ fun MovieVerseNavigation() {
 
                             MovieScreen.Forum -> {
                                 ForumScreen(
-                                    contentPadding = innerPadding
+                                    contentPadding = innerPadding,
+                                    onChatClick = { chat ->
+                                        lastListScreen = MovieScreen.Forum
+                                        movieScreen = MovieScreen.ForumChatDetail(
+                                            chatId = chat.id,
+                                            title = chat.title
+                                        )
+                                    }
                                 )
                             }
 
@@ -350,6 +365,7 @@ fun MovieVerseNavigation() {
                             }
 
                             is MovieScreen.Detail -> Unit
+                            is MovieScreen.ForumChatDetail -> Unit
                         }
                     }
                 }
