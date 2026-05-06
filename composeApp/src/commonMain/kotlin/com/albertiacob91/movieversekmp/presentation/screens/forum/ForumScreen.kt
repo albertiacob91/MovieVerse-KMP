@@ -1,5 +1,6 @@
 package com.albertiacob91.movieversekmp.presentation.screens.forum
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,7 +33,8 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ForumScreen(
-    contentPadding: PaddingValues
+    contentPadding: PaddingValues,
+    onChatClick: (ForumChatDto) -> Unit
 ) {
     val authApi = remember { AuthApi() }
     val sessionStorage = remember { SessionStorage() }
@@ -67,9 +69,7 @@ fun ForumScreen(
                 showCreateDialog = false
                 newChatTitle = ""
             },
-            title = {
-                Text("Nuevo chat global")
-            },
+            title = { Text("Nuevo chat global") },
             text = {
                 OutlinedTextField(
                     value = newChatTitle,
@@ -160,7 +160,9 @@ fun ForumScreen(
                 ) {
                     items(chats) { chat ->
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onChatClick(chat) },
                             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                         ) {
                             Column(
