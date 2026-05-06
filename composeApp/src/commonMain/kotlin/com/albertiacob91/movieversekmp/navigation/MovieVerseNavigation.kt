@@ -151,7 +151,11 @@ fun MovieVerseNavigation() {
                 is MovieScreen.ForumChatDetail -> {
                     ForumChatDetailScreen(
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(),
-                        chatId = currentMovieScreen.chatId
+                        chatId = currentMovieScreen.chatId,
+                        title = currentMovieScreen.title,
+                        onBackClick = {
+                            movieScreen = MovieScreen.Forum
+                        }
                     )
                 }
 
