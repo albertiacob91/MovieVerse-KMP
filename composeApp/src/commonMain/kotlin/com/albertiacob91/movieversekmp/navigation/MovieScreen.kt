@@ -6,4 +6,5 @@ sealed class MovieScreen {
     data object Forum : MovieScreen()
     data object Profile : MovieScreen()
     data class Detail(val movieId: Int) : MovieScreen()
+    data class ForumChatDetail(val chatId: String, val title: String) : MovieScreen()
 }

@@ -10,6 +10,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import com.albertiacob91.movieversekmp.server.data.model.ForumChatsTable
+import com.albertiacob91.movieversekmp.server.data.model.ForumMessagesTable
 
 object DatabaseFactory {
 
@@ -23,7 +24,8 @@ object DatabaseFactory {
                 SessionsTable,
                 FavoritesTable,
                 CommentsTable,
-                ForumChatsTable
+                ForumChatsTable,
+                ForumMessagesTable
             )
         }
     }

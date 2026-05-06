@@ -1,10 +1,13 @@
 package com.albertiacob91.movieversekmp.server.routing
 
 import com.albertiacob91.movieversekmp.server.data.model.ForumChatsTable
+import com.albertiacob91.movieversekmp.server.data.model.ForumMessagesTable
 import com.albertiacob91.movieversekmp.server.data.model.SessionsTable
 import com.albertiacob91.movieversekmp.server.data.model.UsersTable
 import com.albertiacob91.movieversekmp.server.dto.CreateForumChatRequest
+import com.albertiacob91.movieversekmp.server.dto.CreateForumMessageRequest
 import com.albertiacob91.movieversekmp.server.dto.ForumChatResponse
+import com.albertiacob91.movieversekmp.server.dto.ForumMessageResponse
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
@@ -93,6 +96,116 @@ fun Route.forumRoutes() {
                     id = newId.toString(),
                     title = request.title.trim(),
                     createdBy = username,
+                    createdAt = createdAt.toString()
+                )
+            )
+        }
+
+        get("/chats/{chatId}/messages") {
+            val chatId = call.parameters["chatId"]?.let {
+                runCatching { UUID.fromString(it) }.getOrNull()
+            }
+
+            if (chatId == null) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Invalid chat id"))
+                return@get
+            }
+
+            val messages = transaction {
+                (ForumMessagesTable innerJoin UsersTable)
+                    .selectAll()
+                    .where { ForumMessagesTable.chatId eq chatId }
+                    .orderBy(ForumMessagesTable.createdAt, SortOrder.ASC)
+                    .map {
+                        ForumMessageResponse(
+                            id = it[ForumMessagesTable.id].toString(),
+                            chatId = it[ForumMessagesTable.chatId].toString(),
+                            content = it[ForumMessagesTable.content],
+                            username = it[UsersTable.username],
+                            userId = it[UsersTable.id].toString(),
+                            createdAt = it[ForumMessagesTable.createdAt].toString()
+                        )
+                    }
+            }
+
+            call.respond(HttpStatusCode.OK, messages)
+        }
+
+        post("/chats/{chatId}/messages") {
+            val authHeader = call.request.headers["Authorization"]
+
+            if (authHeader.isNullOrBlank() || !authHeader.startsWith("Bearer ")) {
+                call.respond(HttpStatusCode.Unauthorized, mapOf("message" to "Token missing"))
+                return@post
+            }
+
+            val token = authHeader.removePrefix("Bearer ").trim()
+            val chatId = call.parameters["chatId"]?.let {
+                runCatching { UUID.fromString(it) }.getOrNull()
+            }
+
+            if (chatId == null) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Invalid chat id"))
+                return@post
+            }
+
+            val request = call.receive<CreateForumMessageRequest>()
+
+            if (request.content.isBlank()) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Content is required"))
+                return@post
+            }
+
+            val sessionUserId = transaction {
+                SessionsTable
+                    .selectAll()
+                    .firstOrNull { row -> row[SessionsTable.token] == token }
+                    ?.get(SessionsTable.userId)
+            }
+
+            if (sessionUserId == null) {
+                call.respond(HttpStatusCode.Unauthorized, mapOf("message" to "Invalid session"))
+                return@post
+            }
+
+            val chatExists = transaction {
+                ForumChatsTable
+                    .selectAll()
+                    .any { row -> row[ForumChatsTable.id] == chatId }
+            }
+
+            if (!chatExists) {
+                call.respond(HttpStatusCode.NotFound, mapOf("message" to "Chat not found"))
+                return@post
+            }
+
+            val createdAt = Instant.now()
+            val newId = UUID.randomUUID()
+
+            transaction {
+                ForumMessagesTable.insert {
+                    it[ForumMessagesTable.id] = newId
+                    it[ForumMessagesTable.chatId] = chatId
+                    it[ForumMessagesTable.userId] = sessionUserId
+                    it[ForumMessagesTable.content] = request.content.trim()
+                    it[ForumMessagesTable.createdAt] = createdAt
+                }
+            }
+
+            val username = transaction {
+                UsersTable
+                    .selectAll()
+                    .first { row -> row[UsersTable.id] == sessionUserId }[UsersTable.username]
+            }
+
+            call.respond(
+                HttpStatusCode.Created,
+                ForumMessageResponse(
+                    id = newId.toString(),
+                    chatId = chatId.toString(),
+                    content = request.content.trim(),
+                    username = username,
+                    userId = sessionUserId.toString(),
                     createdAt = createdAt.toString()
                 )
             )
