@@ -39,127 +39,63 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.albertiacob91.movieversekmp.data.local.SessionStorage
-import com.albertiacob91.movieversekmp.data.remote.AuthApi
-import com.albertiacob91.movieversekmp.data.remote.CommentDto
-import com.albertiacob91.movieversekmp.data.remote.MovieDto
 import com.albertiacob91.movieversekmp.presentation.components.CastItem
 import com.albertiacob91.movieversekmp.presentation.components.CommentItem
 import com.albertiacob91.movieversekmp.presentation.components.TrailerPlayer
-import kotlinx.coroutines.launch
+import com.albertiacob91.movieversekmp.presentation.viewmodel.MovieDetailViewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun MovieDetailScreen(
     movieId: Int,
     onBackClick: () -> Unit
 ) {
-    val authApi = remember { AuthApi() }
-    val sessionStorage = remember { SessionStorage() }
-    val scope = rememberCoroutineScope()
+    val viewModel: MovieDetailViewModel = koinViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    var commentText by remember { mutableStateOf("") }
     val context = LocalPlatformContext.current
 
-    var movie by remember { mutableStateOf<MovieDto?>(null) }
-    var comments by remember { mutableStateOf<List<CommentDto>>(emptyList()) }
-    var commentText by remember { mutableStateOf("") }
-
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf("") }
-    var favoriteMessage by remember { mutableStateOf("") }
-    var commentMessage by remember { mutableStateOf("") }
-    var isFavorite by remember { mutableStateOf(false) }
-    suspend fun loadComments() {
-        comments = authApi.getComments(movieId)
-    }
-
-    suspend fun loadFavoriteState() {
-        val token = sessionStorage.getToken()
-        isFavorite = if (!token.isNullOrBlank()) {
-            authApi.isFavorite(token, movieId)
-        } else {
-            false
-        }
-    }
-
     LaunchedEffect(movieId) {
-        runCatching {
-            authApi.getMovieDetail(movieId)
-        }.onSuccess {
-            movie = it
-            errorMessage = if (it == null) "Película no encontrada" else ""
-        }.onFailure {
-            errorMessage = it.message ?: "Error cargando detalle"
-        }
-
-        runCatching { loadComments() }
-        runCatching { loadFavoriteState() }
-
-        isLoading = false
+        viewModel.load(movieId)
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    LaunchedEffect(state.commentMessage) {
+        if (state.commentMessage == "Comentario publicado") {
+            commentText = ""
+        }
+    }
+
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
         item {
             DetailTopBar(
-                title = movie?.title ?: "",
-                isFavorite = isFavorite,
+                title = state.movie?.title ?: "",
+                isFavorite = state.isFavorite,
                 onBackClick = onBackClick,
-                onFavoriteClick = {
-                    val token = sessionStorage.getToken()
-                    if (token.isNullOrBlank()) {
-                        favoriteMessage = "Sesión no válida"
-                    } else {
-                        scope.launch {
-                            favoriteMessage = "Procesando..."
-
-                            val success = if (isFavorite) {
-                                authApi.removeFavorite(token, movieId)
-                            } else {
-                                authApi.addFavorite(token, movieId)
-                            }
-
-                            if (success) {
-                                isFavorite = !isFavorite
-                                favoriteMessage = if (isFavorite) {
-                                    "Añadida a favoritas"
-                                } else {
-                                    "Quitada de favoritas"
-                                }
-                            } else {
-                                favoriteMessage = "No se pudo actualizar"
-                            }
-                        }
-                    }
-                }
+                onFavoriteClick = { viewModel.toggleFavorite(movieId) }
             )
         }
 
         when {
-            isLoading -> {
+            state.isLoading -> {
                 item {
-                    Text(
-                        text = "Cargando detalle...",
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    Text(text = "Cargando detalle...", modifier = Modifier.padding(16.dp))
                 }
             }
 
-            errorMessage.isNotBlank() -> {
+            state.error.isNotBlank() -> {
                 item {
-                    Text(
-                        text = "Error: $errorMessage",
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    Text(text = "Error: ${state.error}", modifier = Modifier.padding(16.dp))
                 }
             }
 
-            movie != null -> {
+            state.movie != null -> {
                 item {
-                    val currentMovie = movie!!
+                    val currentMovie = state.movie!!
 
                     Column(
                         modifier = Modifier
@@ -174,7 +110,6 @@ fun MovieDetailScreen(
                                     .height(400.dp)
                                     .clip(RoundedCornerShape(20.dp))
                             )
-
                             Spacer(modifier = Modifier.height(18.dp))
                         } else {
                             currentMovie.posterUrl?.let { posterUrl ->
@@ -190,78 +125,35 @@ fun MovieDetailScreen(
                                         .clip(RoundedCornerShape(20.dp)),
                                     contentScale = ContentScale.Crop
                                 )
-
                                 Spacer(modifier = Modifier.height(18.dp))
                             }
                         }
 
                         Text(
                             text = currentMovie.title.uppercase(),
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.Normal
-                            )
+                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal)
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             val ratingText = currentMovie.voteAverage?.let {
                                 val rounded = ((it * 10).toInt() / 10.0)
                                 if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
                             } ?: "-"
-
-                            val yearText = currentMovie.releaseDate
-                                ?.takeIf { it.length >= 4 }
-                                ?.substring(0, 4)
-                                ?: "----"
-
+                            val yearText = currentMovie.releaseDate?.takeIf { it.length >= 4 }?.substring(0, 4) ?: "----"
                             val runtimeText = currentMovie.runtime?.let { "$it min" } ?: "--"
 
-                            DetailInfoPill(
-                                icon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Star,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                },
-                                text = ratingText
-                            )
-
-                            DetailInfoPill(
-                                icon = {
-                                    Icon(
-                                        imageVector = Icons.Default.CalendarToday,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                },
-                                text = yearText
-                            )
-
-                            DetailInfoPill(
-                                icon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Schedule,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                },
-                                text = runtimeText
-                            )
+                            DetailInfoPill(icon = { Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(14.dp)) }, text = ratingText)
+                            DetailInfoPill(icon = { Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(14.dp)) }, text = yearText)
+                            DetailInfoPill(icon = { Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(14.dp)) }, text = runtimeText)
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (currentMovie.genres.isNotEmpty()) {
-                                currentMovie.genres.take(5).forEach { genre ->
-                                    GenrePill(genre)
-                                }
+                                currentMovie.genres.take(5).forEach { genre -> GenrePill(genre) }
                             } else {
                                 GenrePill("Película")
                             }
@@ -271,60 +163,28 @@ fun MovieDetailScreen(
 
                         if (currentMovie.cast.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(20.dp))
-
-                            Text(
-                                text = "Main cast",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            )
-
+                            Text(text = "Main cast", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                             Spacer(modifier = Modifier.height(12.dp))
-
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                items(currentMovie.cast) { castMember ->
-                                    CastItem(castMember)
-                                }
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                items(currentMovie.cast) { castMember -> CastItem(castMember) }
                             }
-
                             Spacer(modifier = Modifier.height(20.dp))
                         } else {
                             Spacer(modifier = Modifier.height(18.dp))
                         }
 
-                        if (favoriteMessage.isNotBlank()) {
-                            Text(
-                                text = favoriteMessage,
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                        if (state.favoriteMessage.isNotBlank()) {
+                            Text(text = state.favoriteMessage, style = MaterialTheme.typography.bodySmall)
                             Spacer(modifier = Modifier.height(12.dp))
                         }
 
-                        Text(
-                            text = "Synopsis",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        )
-
+                        Text(text = "Synopsis", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                         Spacer(modifier = Modifier.height(10.dp))
-
-                        Text(
-                            text = currentMovie.overview.ifBlank { "Sin descripción" },
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Text(text = currentMovie.overview.ifBlank { "Sin descripción" }, style = MaterialTheme.typography.bodyMedium)
 
                         Spacer(modifier = Modifier.height(28.dp))
 
-                        Text(
-                            text = "Comentarios",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        )
-
+                        Text(text = "Comentarios", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                         Spacer(modifier = Modifier.height(12.dp))
 
                         OutlinedTextField(
@@ -338,55 +198,28 @@ fun MovieDetailScreen(
 
                         Button(
                             onClick = {
-                                val token = sessionStorage.getToken()
-                                when {
-                                    token.isNullOrBlank() -> {
-                                        commentMessage = "Sesión no válida"
-                                    }
-
-                                    commentText.isBlank() -> {
-                                        commentMessage = "El comentario no puede estar vacío"
-                                    }
-
-                                    else -> {
-                                        scope.launch {
-                                            commentMessage = "Enviando..."
-
-                                            val success = authApi.addComment(token, movieId, commentText)
-
-                                            if (success) {
-                                                commentText = ""
-                                                commentMessage = "Comentario publicado"
-                                                comments = authApi.getComments(movieId)
-                                            } else {
-                                                commentMessage = "No se pudo publicar"
-                                            }
-                                        }
-                                    }
-                                }
+                                viewModel.postComment(movieId, commentText)
                             }
                         ) {
                             Text("Publicar comentario")
                         }
 
-                        if (commentMessage.isNotBlank()) {
+                        if (state.commentMessage.isNotBlank()) {
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(commentMessage)
+                            Text(state.commentMessage)
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
 
-                items(comments.size) { index ->
+                items(state.comments.size) { index ->
                     Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-                        CommentItem(comments[index])
+                        CommentItem(state.comments[index])
                     }
                 }
 
-                item {
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
+                item { Spacer(modifier = Modifier.height(24.dp)) }
             }
         }
     }
@@ -407,13 +240,8 @@ private fun DetailTopBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBackClick) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Volver",
-                tint = Color.White
-            )
+            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Volver", tint = Color.White)
         }
-
         Text(
             text = title.uppercase(),
             color = Color.White,
@@ -422,7 +250,6 @@ private fun DetailTopBar(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
-
         IconButton(onClick = onFavoriteClick) {
             Icon(
                 imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
@@ -434,10 +261,7 @@ private fun DetailTopBar(
 }
 
 @Composable
-private fun DetailInfoPill(
-    icon: @Composable () -> Unit,
-    text: String
-) {
+private fun DetailInfoPill(icon: @Composable () -> Unit, text: String) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
@@ -447,10 +271,7 @@ private fun DetailInfoPill(
     ) {
         icon()
         Spacer(modifier = Modifier.width(6.dp))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelMedium
-        )
+        Text(text = text, style = MaterialTheme.typography.labelMedium)
     }
 }
 
@@ -463,9 +284,6 @@ private fun GenrePill(text: String) {
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelMedium
-        )
+        Text(text = text, style = MaterialTheme.typography.labelMedium)
     }
 }

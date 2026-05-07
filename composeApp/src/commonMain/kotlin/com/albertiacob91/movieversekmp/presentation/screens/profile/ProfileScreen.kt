@@ -17,61 +17,27 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.albertiacob91.movieversekmp.data.local.SessionStorage
-import com.albertiacob91.movieversekmp.data.remote.AuthApi
-import com.albertiacob91.movieversekmp.presentation.model.ProfileUi
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.albertiacob91.movieversekmp.presentation.theme.Dimens
+import com.albertiacob91.movieversekmp.presentation.viewmodel.ProfileViewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ProfileScreen(
     contentPadding: PaddingValues,
     onLogoutClick: () -> Unit
 ) {
-    val authApi = remember { AuthApi() }
-    val sessionStorage = remember { SessionStorage() }
-
-    var profile by remember { mutableStateOf<ProfileUi?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf("") }
+    val viewModel: ProfileViewModel = koinViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        val token = sessionStorage.getToken()
-
-        if (token.isNullOrBlank()) {
-            errorMessage = "Sesión no válida"
-            isLoading = false
-            return@LaunchedEffect
-        }
-
-        runCatching {
-            authApi.getMe(token)
-        }.onSuccess { me ->
-            if (me != null) {
-                profile = ProfileUi(
-                    id = me.id,
-                    username = me.username,
-                    email = me.email
-                )
-                errorMessage = ""
-            } else {
-                errorMessage = "No se pudo cargar el perfil"
-            }
-        }.onFailure {
-            errorMessage = it.message ?: "Error cargando perfil"
-        }
-
-        isLoading = false
+        viewModel.loadProfile()
     }
 
     Column(
@@ -85,25 +51,16 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(Dimens.largeSpacing))
 
         when {
-            isLoading -> {
-                Text(
-                    text = "Cargando perfil...",
-                    style = MaterialTheme.typography.bodyLarge
-                )
+            state.isLoading -> {
+                Text(text = "Cargando perfil...", style = MaterialTheme.typography.bodyLarge)
             }
 
-            errorMessage.isNotBlank() -> {
-                Text(
-                    text = "Error: $errorMessage",
-                    style = MaterialTheme.typography.bodyLarge
-                )
+            state.error.isNotBlank() -> {
+                Text(text = "Error: ${state.error}", style = MaterialTheme.typography.bodyLarge)
             }
 
-            profile != null -> {
-                val initial = profile!!.username
-                    .trim()
-                    .take(1)
-                    .uppercase()
+            state.profile != null -> {
+                val initial = state.profile!!.username.trim().take(1).uppercase()
 
                 Box(
                     modifier = Modifier
@@ -112,58 +69,26 @@ fun ProfileScreen(
                         .padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = initial,
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    )
+                    Text(text = initial, style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold))
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                Text(
-                    text = profile!!.username,
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.SemiBold
-                    )
-                )
-
+                Text(text = state.profile!!.username, style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold))
                 Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = profile!!.email,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text(text = state.profile!!.email, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                ProfileInfoCard(
-                    title = "Nombre de usuario",
-                    value = profile!!.username
-                )
-
+                ProfileInfoCard(title = "Nombre de usuario", value = state.profile!!.username)
                 Spacer(modifier = Modifier.height(12.dp))
-
-                ProfileInfoCard(
-                    title = "Correo electrónico",
-                    value = profile!!.email
-                )
-
+                ProfileInfoCard(title = "Correo electrónico", value = state.profile!!.email)
                 Spacer(modifier = Modifier.height(12.dp))
-
-                ProfileInfoCard(
-                    title = "ID de usuario",
-                    value = profile!!.id
-                )
+                ProfileInfoCard(title = "ID de usuario", value = state.profile!!.id)
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                Button(
-                    onClick = onLogoutClick,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                Button(onClick = onLogoutClick, modifier = Modifier.fillMaxWidth()) {
                     Text("Cerrar sesión")
                 }
             }
@@ -172,30 +97,16 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileInfoCard(
-    title: String,
-    value: String
-) {
+private fun ProfileInfoCard(title: String, value: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyLarge
-            )
+            Text(text = value, style = MaterialTheme.typography.bodyLarge)
         }
     }
 }

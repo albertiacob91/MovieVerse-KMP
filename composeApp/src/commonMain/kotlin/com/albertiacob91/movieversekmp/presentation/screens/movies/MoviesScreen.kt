@@ -15,13 +15,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.albertiacob91.movieversekmp.data.remote.AuthApi
-import com.albertiacob91.movieversekmp.data.remote.MovieDto
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.albertiacob91.movieversekmp.presentation.components.MovieCard
 import com.albertiacob91.movieversekmp.presentation.theme.Dimens
+import com.albertiacob91.movieversekmp.presentation.viewmodel.MoviesViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun MoviesScreen(
@@ -30,86 +31,14 @@ fun MoviesScreen(
     listState: LazyListState,
     onMovieClick: (Int) -> Unit
 ) {
-    val authApi = remember { AuthApi() }
-
-    var movies by remember { mutableStateOf<List<MovieDto>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var isLoadingMore by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-
-    var currentPage by remember { mutableStateOf(0) }
-    var pageSize by remember { mutableStateOf(20) }
-    var endReached by remember { mutableStateOf(false) }
-    var nextTriggerIndex by remember { mutableStateOf(20) }
-
-    suspend fun fetchPage(page: Int): List<MovieDto> {
-        return if (searchQuery.isBlank()) {
-            authApi.getPopularMovies(page = page)
-        } else {
-            authApi.searchMovies(searchQuery, page = page)
-        }
-    }
-
-    suspend fun loadInitialPages() {
-        isLoading = true
-        isLoadingMore = false
-        errorMessage = ""
-        endReached = false
-        currentPage = 0
-        nextTriggerIndex = 20
-
-        val firstPage = fetchPage(1)
-        pageSize = if (firstPage.isNotEmpty()) firstPage.size else 20
-
-        if (firstPage.isEmpty()) {
-            movies = emptyList()
-            currentPage = 1
-            endReached = true
-            isLoading = false
-            return
-        }
-
-        val secondPage = fetchPage(2)
-
-        movies = firstPage + secondPage
-        currentPage = if (secondPage.isNotEmpty()) 2 else 1
-        endReached = secondPage.isEmpty()
-
-        nextTriggerIndex = pageSize
-        isLoading = false
-    }
-
-    suspend fun loadNextPage() {
-        if (isLoading || isLoadingMore || endReached) return
-
-        isLoadingMore = true
-        errorMessage = ""
-
-        val pageToLoad = currentPage + 1
-        val newMovies = fetchPage(pageToLoad)
-
-        if (newMovies.isEmpty()) {
-            endReached = true
-        } else {
-            movies = movies + newMovies
-            currentPage = pageToLoad
-            nextTriggerIndex += pageSize
-        }
-
-        isLoadingMore = false
-    }
+    val viewModel: MoviesViewModel = koinViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(searchQuery) {
-        runCatching {
-            loadInitialPages()
-        }.onFailure {
-            errorMessage = it.message ?: "Error cargando películas"
-            isLoading = false
-            isLoadingMore = false
-        }
+        viewModel.loadForQuery(searchQuery)
     }
 
-    LaunchedEffect(listState, movies, isLoading, isLoadingMore, endReached, nextTriggerIndex) {
+    LaunchedEffect(listState, state.movies, state.isLoading, state.isLoadingMore, state.endReached, state.nextTriggerIndex) {
         snapshotFlow {
             listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
         }
@@ -117,17 +46,12 @@ fun MoviesScreen(
             .distinctUntilChanged()
             .collectLatest { lastVisibleItemIndex ->
                 if (
-                    lastVisibleItemIndex >= nextTriggerIndex &&
-                    !isLoading &&
-                    !isLoadingMore &&
-                    !endReached
+                    lastVisibleItemIndex >= state.nextTriggerIndex &&
+                    !state.isLoading &&
+                    !state.isLoadingMore &&
+                    !state.endReached
                 ) {
-                    runCatching {
-                        loadNextPage()
-                    }.onFailure {
-                        errorMessage = it.message ?: "Error cargando más películas"
-                        isLoadingMore = false
-                    }
+                    viewModel.loadNextPage()
                 }
             }
     }
@@ -139,27 +63,23 @@ fun MoviesScreen(
             .padding(horizontal = Dimens.screenPadding)
     ) {
         when {
-            isLoading -> {
+            state.isLoading -> {
                 Text(
                     text = "Cargando películas...",
                     modifier = Modifier.padding(top = Dimens.mediumSpacing)
                 )
             }
 
-            errorMessage.isNotBlank() && movies.isEmpty() -> {
+            state.error.isNotBlank() && state.movies.isEmpty() -> {
                 Text(
-                    text = "Error: $errorMessage",
+                    text = "Error: ${state.error}",
                     modifier = Modifier.padding(top = Dimens.mediumSpacing)
                 )
             }
 
-            movies.isEmpty() -> {
+            state.movies.isEmpty() -> {
                 Text(
-                    text = if (searchQuery.isBlank()) {
-                        "No hay películas disponibles"
-                    } else {
-                        "No se encontraron resultados"
-                    },
+                    text = if (searchQuery.isBlank()) "No hay películas disponibles" else "No se encontraron resultados",
                     modifier = Modifier.padding(top = Dimens.mediumSpacing)
                 )
             }
@@ -170,14 +90,14 @@ fun MoviesScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(Dimens.smallSpacing)
                 ) {
-                    itemsIndexed(movies) { _, movie ->
+                    itemsIndexed(state.movies) { _, movie ->
                         MovieCard(
                             movie = movie,
                             onClick = { onMovieClick(movie.id) }
                         )
                     }
 
-                    if (isLoadingMore) {
+                    if (state.isLoadingMore) {
                         item {
                             Column(
                                 modifier = Modifier
@@ -187,7 +107,6 @@ fun MoviesScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 CircularProgressIndicator()
-
                                 Text(
                                     text = "Cargando más resultados...",
                                     modifier = Modifier.padding(top = 12.dp)
