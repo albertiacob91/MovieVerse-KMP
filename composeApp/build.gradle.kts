@@ -53,6 +53,9 @@ kotlin {
             implementation("com.russhwolf:multiplatform-settings-no-arg:1.3.0")
             implementation("io.coil-kt.coil3:coil-compose:3.4.0")
             implementation(compose.materialIconsExtended)
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

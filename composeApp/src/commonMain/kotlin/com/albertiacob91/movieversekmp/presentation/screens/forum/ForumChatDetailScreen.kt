@@ -27,22 +27,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.albertiacob91.movieversekmp.data.local.SessionStorage
-import com.albertiacob91.movieversekmp.data.remote.AuthApi
-import com.albertiacob91.movieversekmp.data.remote.ForumMessageDto
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.albertiacob91.movieversekmp.presentation.theme.Dimens
-import kotlinx.coroutines.launch
+import com.albertiacob91.movieversekmp.presentation.viewmodel.ForumChatDetailViewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,30 +45,16 @@ fun ForumChatDetailScreen(
     title: String,
     onBackClick: () -> Unit
 ) {
-    val authApi = remember { AuthApi() }
-    val sessionStorage = remember { SessionStorage() }
-    val scope = rememberCoroutineScope()
-
-    var messages by remember { mutableStateOf<List<ForumMessageDto>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf("") }
+    val viewModel: ForumChatDetailViewModel = koinViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var newMessage by remember { mutableStateOf("") }
-    var isSending by remember { mutableStateOf(false) }
-
-    suspend fun loadMessages() {
-        isLoading = true
-        errorMessage = ""
-        messages = authApi.getForumMessages(chatId)
-        isLoading = false
-    }
 
     LaunchedEffect(chatId) {
-        runCatching {
-            loadMessages()
-        }.onFailure {
-            errorMessage = it.message ?: "Error cargando mensajes"
-            isLoading = false
-        }
+        viewModel.loadMessages(chatId)
+    }
+
+    LaunchedEffect(state.messages) {
+        if (!state.isLoading) newMessage = ""
     }
 
     Scaffold(
@@ -88,15 +67,10 @@ fun ForumChatDetailScreen(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver"
-                        )
+                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 },
-                title = {
-                    Text(title)
-                }
+                title = { Text(title) }
             )
         },
         bottomBar = {
@@ -112,53 +86,26 @@ fun ForumChatDetailScreen(
                     value = newMessage,
                     onValueChange = { newMessage = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = {
-                        Text("Escribe un mensaje")
-                    },
+                    placeholder = { Text("Escribe un mensaje") },
                     singleLine = true
                 )
 
                 FloatingActionButton(
                     onClick = {
-                        val token = sessionStorage.getToken()
-                        if (token.isNullOrBlank() || newMessage.isBlank() || isSending) return@FloatingActionButton
-
-                        scope.launch {
-                            isSending = true
-                            runCatching {
-                                authApi.createForumMessage(
-                                    token = token,
-                                    chatId = chatId,
-                                    content = newMessage.trim()
-                                )
-                            }.onSuccess { created ->
-                                if (created != null) {
-                                    newMessage = ""
-                                    loadMessages()
-                                } else {
-                                    errorMessage = "No se pudo enviar el mensaje"
-                                }
-                            }.onFailure {
-                                errorMessage = it.message ?: "Error enviando mensaje"
-                            }
-                            isSending = false
+                        if (newMessage.isNotBlank() && !state.isSending) {
+                            val msg = newMessage
+                            newMessage = ""
+                            viewModel.sendMessage(chatId, msg)
                         }
                     },
                     modifier = Modifier.size(52.dp),
                     containerColor = Color(0xFF6E56CF),
                     contentColor = Color.White
                 ) {
-                    if (isSending) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
+                    if (state.isSending) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                     } else {
-                        Icon(
-                            imageVector = Icons.Default.Send,
-                            contentDescription = "Enviar"
-                        )
+                        Icon(imageVector = Icons.Default.Send, contentDescription = "Enviar")
                     }
                 }
             }
@@ -172,27 +119,18 @@ fun ForumChatDetailScreen(
                 .padding(horizontal = Dimens.screenPadding)
         ) {
             when {
-                isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                state.isLoading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 }
 
-                errorMessage.isNotBlank() && messages.isEmpty() -> {
-                    Text(
-                        text = "Error: $errorMessage",
-                        modifier = Modifier.padding(top = Dimens.mediumSpacing)
-                    )
+                state.error.isNotBlank() && state.messages.isEmpty() -> {
+                    Text(text = "Error: ${state.error}", modifier = Modifier.padding(top = Dimens.mediumSpacing))
                 }
 
-                messages.isEmpty() -> {
-                    Text(
-                        text = "Todavía no hay mensajes en este chat",
-                        modifier = Modifier.padding(top = Dimens.mediumSpacing)
-                    )
+                state.messages.isEmpty() -> {
+                    Text(text = "Todavía no hay mensajes en este chat", modifier = Modifier.padding(top = Dimens.mediumSpacing))
                 }
 
                 else -> {
@@ -202,19 +140,14 @@ fun ForumChatDetailScreen(
                             .padding(top = Dimens.mediumSpacing),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        items(messages) { message ->
+                        items(state.messages) { message ->
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(12.dp)
-                                ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
                                     Text(text = message.username)
-                                    Text(
-                                        text = message.content,
-                                        modifier = Modifier.padding(top = 4.dp)
-                                    )
+                                    Text(text = message.content, modifier = Modifier.padding(top = 4.dp))
                                 }
                             }
                         }

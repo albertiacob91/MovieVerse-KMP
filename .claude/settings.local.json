@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"C:\\\\Users\\\\Albert iacob\\\\Downloads\\\\10 SKILLS ADRI Y JUANPE\\\\kit-skill-creator\\\\.claude\\\\skills\")",
+      "Read(//c/Users/Albert iacob/Downloads/10 SKILLS ADRI Y JUANPE/kit-skill-creator/.claude/skills/**)",
+      "Bash(Get-ChildItem -Path \"D:\\\\ProyectosGithub\\\\MovieVerseKMP\" -Force)",
+      "Bash(Select-Object Name, FullName)"
+    ]
+  }
+}
