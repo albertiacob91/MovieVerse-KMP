@@ -30,6 +30,7 @@ import com.albertiacob91.movieversekmp.presentation.viewmodel.ForumViewModel
 import com.albertiacob91.movieversekmp.presentation.viewmodel.MovieDetailViewModel
 import com.albertiacob91.movieversekmp.presentation.viewmodel.MoviesViewModel
 import com.albertiacob91.movieversekmp.presentation.viewmodel.ProfileViewModel
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val networkModule = module {
@@ -62,13 +63,13 @@ val useCaseModule = module {
 }
 
 val viewModelModule = module {
-    viewModel { MoviesViewModel(get(), get()) }
-    viewModel { MovieDetailViewModel(get(), get(), get(), get(), get(), get()) }
-    viewModel { FavoritesViewModel(get(), get(), get()) }
-    viewModel { ForumViewModel(get(), get(), get()) }
-    viewModel { ForumChatDetailViewModel(get(), get(), get()) }
-    viewModel { ProfileViewModel(get()) }
-    viewModel { AuthViewModel(get(), get(), get(), get()) }
+    viewModelOf(::MoviesViewModel)
+    viewModelOf(::MovieDetailViewModel)
+    viewModelOf(::FavoritesViewModel)
+    viewModelOf(::ForumViewModel)
+    viewModelOf(::ForumChatDetailViewModel)
+    viewModelOf(::ProfileViewModel)
+    viewModelOf(::AuthViewModel)
 }
 
 val appModules = listOf(networkModule, repositoryModule, useCaseModule, viewModelModule)
