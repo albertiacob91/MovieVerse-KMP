@@ -27,6 +27,7 @@ object DatabaseFactory {
                 ForumChatsTable,
                 ForumMessagesTable
             )
+            SchemaUtils.createMissingTablesAndColumns(UsersTable)
         }
     }
 

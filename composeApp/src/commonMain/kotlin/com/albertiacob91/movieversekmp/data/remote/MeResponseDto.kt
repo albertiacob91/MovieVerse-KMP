@@ -6,5 +6,6 @@ import kotlinx.serialization.Serializable
 data class MeResponseDto(
     val id: String,
     val username: String,
-    val email: String
+    val email: String,
+    val avatarUrl: String? = null
 )

@@ -9,5 +9,6 @@ data class ForumMessageResponse(
     val content: String,
     val username: String,
     val userId: String,
+    val avatarUrl: String? = null,
     val createdAt: String
 )
