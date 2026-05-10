@@ -52,7 +52,8 @@ class SessionRepository {
                     id = it[UsersTable.id].toString(),
                     username = it[UsersTable.username],
                     email = it[UsersTable.email],
-                    passwordHash = it[UsersTable.passwordHash]
+                    passwordHash = it[UsersTable.passwordHash],
+                    avatarUrl = it[UsersTable.avatarUrl]
                 )
             }
             .singleOrNull()
