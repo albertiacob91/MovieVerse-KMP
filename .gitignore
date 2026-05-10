@@ -17,3 +17,14 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# Local config and tooling
+.mcp.json
+.claude/
+.agents/
+.engram/
+.cursorrules
+.cursor/mcp.json
+.cursor/rules/
+skills-lock.json
+CLAUDE.md
