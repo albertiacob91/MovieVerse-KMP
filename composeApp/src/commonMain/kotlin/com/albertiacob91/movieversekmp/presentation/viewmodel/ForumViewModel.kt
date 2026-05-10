@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.albertiacob91.movieversekmp.data.local.SessionStorage
 import com.albertiacob91.movieversekmp.data.remote.ForumChatDto
 import com.albertiacob91.movieversekmp.domain.usecase.forum.CreateForumChatUseCase
+import com.albertiacob91.movieversekmp.domain.usecase.forum.DeleteForumChatUseCase
 import com.albertiacob91.movieversekmp.domain.usecase.forum.GetForumChatsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,12 +16,14 @@ import kotlinx.coroutines.launch
 data class ForumUiState(
     val chats: List<ForumChatDto> = emptyList(),
     val isLoading: Boolean = true,
-    val error: String = ""
+    val error: String = "",
+    val currentUserId: String = ""
 )
 
 class ForumViewModel(
     private val getForumChatsUseCase: GetForumChatsUseCase,
     private val createForumChatUseCase: CreateForumChatUseCase,
+    private val deleteForumChatUseCase: DeleteForumChatUseCase,
     private val sessionStorage: SessionStorage
 ) : ViewModel() {
 
@@ -28,8 +31,9 @@ class ForumViewModel(
     val state: StateFlow<ForumUiState> = _state.asStateFlow()
 
     fun loadChats() {
+        val userId = sessionStorage.getUserId() ?: ""
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = "") }
+            _state.update { it.copy(isLoading = true, error = "", currentUserId = userId) }
             runCatching { getForumChatsUseCase() }
                 .onSuccess { chats -> _state.update { it.copy(chats = chats, isLoading = false) } }
                 .onFailure { e -> _state.update { it.copy(error = e.message ?: "Error cargando chats", isLoading = false) } }
@@ -49,6 +53,18 @@ class ForumViewModel(
                     else _state.update { it.copy(error = "No se pudo crear el chat") }
                 }
                 .onFailure { e -> _state.update { it.copy(error = e.message ?: "Error") } }
+        }
+    }
+
+    fun deleteChat(chatId: String) {
+        val token = sessionStorage.getToken()
+        if (token.isNullOrBlank()) return
+        viewModelScope.launch {
+            runCatching { deleteForumChatUseCase(token, chatId) }
+                .onSuccess { ok ->
+                    if (ok) _state.update { it.copy(chats = it.chats.filter { c -> c.id != chatId }) }
+                }
+                .onFailure { e -> _state.update { it.copy(error = e.message ?: "Error eliminando chat") } }
         }
     }
 }

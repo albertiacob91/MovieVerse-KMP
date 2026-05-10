@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import java.time.Instant
 import java.util.UUID
 
@@ -26,6 +27,7 @@ class UserRepository {
                 it[UsersTable.username] = username
                 it[UsersTable.email] = email
                 it[UsersTable.passwordHash] = passwordHash
+                it[avatarUrl] = null
                 it[createdAt] = now
                 it[updatedAt] = now
             }
@@ -42,7 +44,8 @@ class UserRepository {
                     id = it[UsersTable.id].toString(),
                     username = it[UsersTable.username],
                     email = it[UsersTable.email],
-                    passwordHash = it[UsersTable.passwordHash]
+                    passwordHash = it[UsersTable.passwordHash],
+                    avatarUrl = it[UsersTable.avatarUrl]
                 )
             }
             .singleOrNull()
@@ -56,7 +59,8 @@ class UserRepository {
                     id = it[UsersTable.id].toString(),
                     username = it[UsersTable.username],
                     email = it[UsersTable.email],
-                    passwordHash = it[UsersTable.passwordHash]
+                    passwordHash = it[UsersTable.passwordHash],
+                    avatarUrl = it[UsersTable.avatarUrl]
                 )
             }
             .singleOrNull()
@@ -67,6 +71,15 @@ class UserRepository {
             .where { UsersTable.username eq username }
             .count() > 0
     }
+
+    fun updateAvatar(userId: UUID, avatarBase64: String) {
+        transaction {
+            UsersTable.update({ UsersTable.id eq userId }) {
+                it[avatarUrl] = avatarBase64
+                it[updatedAt] = Instant.now()
+            }
+        }
+    }
 }
 
 
@@ -74,5 +87,6 @@ data class UserRecord(
     val id: String,
     val username: String,
     val email: String,
-    val passwordHash: String
+    val passwordHash: String,
+    val avatarUrl: String? = null
 )

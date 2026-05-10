@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 
 data class MoviesUiState(
     val movies: List<MovieDto> = emptyList(),
-    val isLoading: Boolean = true,
+    val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
     val error: String = "",
     val endReached: Boolean = false,

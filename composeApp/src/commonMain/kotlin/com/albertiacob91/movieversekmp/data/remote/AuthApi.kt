@@ -209,4 +209,20 @@ class AuthApi {
             null
         }
     }
+
+    suspend fun deleteForumChat(token: String, chatId: String): Boolean {
+        val response = client.delete("$baseUrl/forum/chats/$chatId") {
+            header("Authorization", "Bearer $token")
+        }
+        return response.status.value in 200..299
+    }
+
+    suspend fun uploadAvatar(token: String, avatarBase64: String): Boolean {
+        val response = client.post("$baseUrl/auth/profile/avatar") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(UpdateAvatarRequestDto(avatarBase64))
+        }
+        return response.status.value in 200..299
+    }
 }
