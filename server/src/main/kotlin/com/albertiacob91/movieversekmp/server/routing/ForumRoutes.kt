@@ -40,7 +40,8 @@ fun Route.forumRoutes() {
                             title = it[ForumChatsTable.title],
                             createdBy = it[UsersTable.username],
                             userId = it[ForumChatsTable.userId].toString(),
-                            createdAt = it[ForumChatsTable.createdAt].toString()
+                            createdAt = it[ForumChatsTable.createdAt].toString(),
+                            avatarUrl = it[UsersTable.avatarUrl]
                         )
                     }
             }
@@ -88,10 +89,10 @@ fun Route.forumRoutes() {
                 }
             }
 
-            val username = transaction {
+            val userRow = transaction {
                 UsersTable
                     .selectAll()
-                    .first { row -> row[UsersTable.id] == sessionUserId }[UsersTable.username]
+                    .first { row -> row[UsersTable.id] == sessionUserId }
             }
 
             call.respond(
@@ -99,9 +100,10 @@ fun Route.forumRoutes() {
                 ForumChatResponse(
                     id = newId.toString(),
                     title = request.title.trim(),
-                    createdBy = username,
+                    createdBy = userRow[UsersTable.username],
                     userId = sessionUserId.toString(),
-                    createdAt = createdAt.toString()
+                    createdAt = createdAt.toString(),
+                    avatarUrl = userRow[UsersTable.avatarUrl]
                 )
             )
         }

@@ -31,7 +31,8 @@ fun Route.commentRoutes() {
                         movieId = it.movieId,
                         userId = it.userId,
                         username = it.username,
-                        content = it.content
+                        content = it.content,
+                        avatarUrl = it.avatarUrl
                     )
                 }
 
@@ -70,7 +71,8 @@ fun Route.commentRoutes() {
                     movieId = request.movieId,
                     userId = user.id,
                     username = user.username,
-                    content = request.content
+                    content = request.content,
+                    avatarUrl = user.avatarUrl
                 )
             )
         }

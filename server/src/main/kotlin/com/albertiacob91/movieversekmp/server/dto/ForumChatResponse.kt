@@ -8,5 +8,6 @@ data class ForumChatResponse(
     val title: String,
     val createdBy: String,
     val userId: String,
-    val createdAt: String
+    val createdAt: String,
+    val avatarUrl: String? = null
 )
