@@ -193,8 +193,6 @@ fun ForumScreen(
                                     )
                                 }
                             }
-                        } else {
-                            ChatCard(chat = chat, onClick = { onChatClick(chat) })
                         }
                     }
                 }
