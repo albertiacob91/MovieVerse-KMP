@@ -5,13 +5,16 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -24,7 +27,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.albertiacob91.movieversekmp.presentation.components.LoadingScreen
 import com.albertiacob91.movieversekmp.presentation.screens.auth.LoginScreen
@@ -42,7 +44,10 @@ private enum class AuthFlowScreen { Login, Register }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MovieVerseNavigation() {
+fun MovieVerseNavigation(
+    isDarkTheme: Boolean,
+    onThemeToggle: () -> Unit
+) {
     val authViewModel: AuthViewModel = koinViewModel()
     val authState by authViewModel.state.collectAsStateWithLifecycle()
 
@@ -66,6 +71,8 @@ fun MovieVerseNavigation() {
             when (authFlowScreen) {
                 AuthFlowScreen.Login -> {
                     LoginScreen(
+                        isDarkTheme = isDarkTheme,
+                        onThemeToggle = onThemeToggle,
                         onNavigateToRegister = { authFlowScreen = AuthFlowScreen.Register },
                         onLoginClick = { email, password ->
                             authViewModel.login(email, password)
@@ -74,6 +81,8 @@ fun MovieVerseNavigation() {
                 }
                 AuthFlowScreen.Register -> {
                     RegisterScreen(
+                        isDarkTheme = isDarkTheme,
+                        onThemeToggle = onThemeToggle,
                         onNavigateToLogin = { authFlowScreen = AuthFlowScreen.Login },
                         onRegisterClick = { username, email, password ->
                             authViewModel.register(username, email, password)
@@ -109,10 +118,10 @@ fun MovieVerseNavigation() {
                         topBar = {
                             TopAppBar(
                                 colors = TopAppBarDefaults.topAppBarColors(
-                                    containerColor = Color.Black,
-                                    titleContentColor = Color.White,
-                                    actionIconContentColor = Color.White,
-                                    navigationIconContentColor = Color.White
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                                    actionIconContentColor = MaterialTheme.colorScheme.onSurface,
+                                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
                                 ),
                                 title = {
                                     if (movieScreen == MovieScreen.Home && searchVisible) {
@@ -123,26 +132,27 @@ fun MovieVerseNavigation() {
                                             singleLine = true,
                                             placeholder = { Text("Buscar película...") },
                                             colors = TextFieldDefaults.colors(
-                                                focusedContainerColor = Color.Transparent,
-                                                unfocusedContainerColor = Color.Transparent,
-                                                focusedTextColor = Color.White,
-                                                unfocusedTextColor = Color.White,
-                                                focusedPlaceholderColor = Color.LightGray,
-                                                unfocusedPlaceholderColor = Color.LightGray,
-                                                focusedIndicatorColor = Color.White,
-                                                unfocusedIndicatorColor = Color.LightGray,
-                                                cursorColor = Color.White
+                                                focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                                unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                cursorColor = MaterialTheme.colorScheme.primary
                                             )
                                         )
                                     } else {
                                         Text(
-                                            when (movieScreen) {
+                                            text = when (movieScreen) {
                                                 MovieScreen.Home -> "MOVIEVERSE"
                                                 MovieScreen.Favorites -> "FAVORITAS"
                                                 MovieScreen.Forum -> "FORO"
                                                 MovieScreen.Profile -> "PERFIL"
                                                 else -> ""
-                                            }
+                                            },
+                                            style = MaterialTheme.typography.titleLarge
                                         )
                                     }
                                 },
@@ -158,36 +168,52 @@ fun MovieVerseNavigation() {
                                             }
                                         }
                                     }
+                                    IconButton(onClick = onThemeToggle) {
+                                        Icon(
+                                            imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                            contentDescription = if (isDarkTheme) "Cambiar a modo claro" else "Cambiar a modo oscuro"
+                                        )
+                                    }
                                 }
                             )
                         },
                         bottomBar = {
-                            NavigationBar(containerColor = Color.Black, contentColor = Color.White) {
+                            NavigationBar(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ) {
+                                val itemColors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                                )
                                 NavigationBarItem(
                                     selected = movieScreen == MovieScreen.Home,
                                     onClick = { movieScreen = MovieScreen.Home; lastListScreen = MovieScreen.Home },
-                                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Color.White, selectedTextColor = Color.White, unselectedIconColor = Color.LightGray, unselectedTextColor = Color.LightGray, indicatorColor = Color.DarkGray),
+                                    colors = itemColors,
                                     icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
                                     label = { Text("Home") }
                                 )
                                 NavigationBarItem(
                                     selected = movieScreen == MovieScreen.Favorites,
                                     onClick = { movieScreen = MovieScreen.Favorites; lastListScreen = MovieScreen.Favorites },
-                                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Color.White, selectedTextColor = Color.White, unselectedIconColor = Color.LightGray, unselectedTextColor = Color.LightGray, indicatorColor = Color.DarkGray),
+                                    colors = itemColors,
                                     icon = { Icon(Icons.Default.Favorite, contentDescription = "Favoritos") },
                                     label = { Text("Favoritos") }
                                 )
                                 NavigationBarItem(
                                     selected = movieScreen == MovieScreen.Forum,
                                     onClick = { movieScreen = MovieScreen.Forum },
-                                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Color.White, selectedTextColor = Color.White, unselectedIconColor = Color.LightGray, unselectedTextColor = Color.LightGray, indicatorColor = Color.DarkGray),
+                                    colors = itemColors,
                                     icon = { Icon(Icons.Default.Forum, contentDescription = "Foro") },
                                     label = { Text("Foro") }
                                 )
                                 NavigationBarItem(
                                     selected = movieScreen == MovieScreen.Profile,
                                     onClick = { movieScreen = MovieScreen.Profile },
-                                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Color.White, selectedTextColor = Color.White, unselectedIconColor = Color.LightGray, unselectedTextColor = Color.LightGray, indicatorColor = Color.DarkGray),
+                                    colors = itemColors,
                                     icon = { Icon(Icons.Default.AccountCircle, contentDescription = "Perfil") },
                                     label = { Text("Perfil") }
                                 )

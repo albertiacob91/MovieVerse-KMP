@@ -34,7 +34,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,6 +46,7 @@ import coil3.request.crossfade
 import com.albertiacob91.movieversekmp.presentation.components.CastItem
 import com.albertiacob91.movieversekmp.presentation.components.CommentItem
 import com.albertiacob91.movieversekmp.presentation.components.TrailerPlayer
+import com.albertiacob91.movieversekmp.presentation.theme.GoldStar
 import com.albertiacob91.movieversekmp.presentation.viewmodel.MovieDetailViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -83,13 +83,21 @@ fun MovieDetailScreen(
         when {
             state.isLoading -> {
                 item {
-                    Text(text = "Cargando detalle...", modifier = Modifier.padding(16.dp))
+                    Text(
+                        text = "Cargando detalle...",
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
             state.error.isNotBlank() -> {
                 item {
-                    Text(text = "Error: ${state.error}", modifier = Modifier.padding(16.dp))
+                    Text(
+                        text = "Error: ${state.error}",
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             }
 
@@ -108,7 +116,7 @@ fun MovieDetailScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(400.dp)
-                                    .clip(RoundedCornerShape(20.dp))
+                                    .clip(MaterialTheme.shapes.large)
                             )
                             Spacer(modifier = Modifier.height(18.dp))
                         } else {
@@ -122,7 +130,7 @@ fun MovieDetailScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(400.dp)
-                                        .clip(RoundedCornerShape(20.dp)),
+                                        .clip(MaterialTheme.shapes.large),
                                     contentScale = ContentScale.Crop
                                 )
                                 Spacer(modifier = Modifier.height(18.dp))
@@ -130,8 +138,8 @@ fun MovieDetailScreen(
                         }
 
                         Text(
-                            text = currentMovie.title.uppercase(),
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal)
+                            text = currentMovie.title,
+                            style = MaterialTheme.typography.headlineSmall
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
@@ -144,47 +152,80 @@ fun MovieDetailScreen(
                             val yearText = currentMovie.releaseDate?.takeIf { it.length >= 4 }?.substring(0, 4) ?: "----"
                             val runtimeText = currentMovie.runtime?.let { "$it min" } ?: "--"
 
-                            DetailInfoPill(icon = { Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(14.dp)) }, text = ratingText)
-                            DetailInfoPill(icon = { Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(14.dp)) }, text = yearText)
-                            DetailInfoPill(icon = { Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(14.dp)) }, text = runtimeText)
+                            DetailInfoPill(
+                                icon = {
+                                    Icon(
+                                        Icons.Default.Star,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = GoldStar
+                                    )
+                                },
+                                text = ratingText
+                            )
+                            DetailInfoPill(
+                                icon = {
+                                    Icon(
+                                        Icons.Default.CalendarToday,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                },
+                                text = yearText
+                            )
+                            DetailInfoPill(
+                                icon = {
+                                    Icon(
+                                        Icons.Default.Schedule,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                },
+                                text = runtimeText
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (currentMovie.genres.isNotEmpty()) {
-                                currentMovie.genres.take(5).forEach { genre -> GenrePill(genre) }
-                            } else {
-                                GenrePill("Película")
-                            }
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            val genres = currentMovie.genres.takeIf { it.isNotEmpty() } ?: listOf("Película")
+                            genres.take(5).forEach { genre -> GenrePill(genre) }
                         }
 
-                        Spacer(modifier = Modifier.height(18.dp))
-
                         if (currentMovie.cast.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(20.dp))
-                            Text(text = "Main cast", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(
+                                text = "Reparto principal",
+                                style = MaterialTheme.typography.titleMedium
+                            )
                             Spacer(modifier = Modifier.height(12.dp))
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 items(currentMovie.cast) { castMember -> CastItem(castMember) }
                             }
-                            Spacer(modifier = Modifier.height(20.dp))
-                        } else {
-                            Spacer(modifier = Modifier.height(18.dp))
                         }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Text(text = "Sinopsis", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = currentMovie.overview.ifBlank { "Sin descripción" },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
 
                         if (state.favoriteMessage.isNotBlank()) {
-                            Text(text = state.favoriteMessage, style = MaterialTheme.typography.bodySmall)
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = state.favoriteMessage,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
-
-                        Text(text = "Synopsis", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(text = currentMovie.overview.ifBlank { "Sin descripción" }, style = MaterialTheme.typography.bodyMedium)
 
                         Spacer(modifier = Modifier.height(28.dp))
 
-                        Text(text = "Comentarios", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                        Text(text = "Comentarios", style = MaterialTheme.typography.titleMedium)
                         Spacer(modifier = Modifier.height(12.dp))
 
                         OutlinedTextField(
@@ -196,17 +237,17 @@ fun MovieDetailScreen(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        Button(
-                            onClick = {
-                                viewModel.postComment(movieId, commentText)
-                            }
-                        ) {
+                        Button(onClick = { viewModel.postComment(movieId, commentText) }) {
                             Text("Publicar comentario")
                         }
 
                         if (state.commentMessage.isNotBlank()) {
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(state.commentMessage)
+                            Text(
+                                text = state.commentMessage,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -235,16 +276,20 @@ private fun DetailTopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Black)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 8.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBackClick) {
-            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Volver", tint = Color.White)
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Volver",
+                tint = MaterialTheme.colorScheme.onSurface
+            )
         }
         Text(
-            text = title.uppercase(),
-            color = Color.White,
+            text = title,
+            color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.titleMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -254,7 +299,7 @@ private fun DetailTopBar(
             Icon(
                 imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
                 contentDescription = "Favorito",
-                tint = Color.White
+                tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -264,7 +309,7 @@ private fun DetailTopBar(
 private fun DetailInfoPill(icon: @Composable () -> Unit, text: String) {
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -280,10 +325,14 @@ private fun GenrePill(text: String) {
     Box(
         modifier = Modifier
             .wrapContentHeight()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
-        Text(text = text, style = MaterialTheme.typography.labelMedium)
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
     }
 }
