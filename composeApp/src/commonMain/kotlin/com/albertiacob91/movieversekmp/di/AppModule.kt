@@ -11,8 +11,10 @@ import com.albertiacob91.movieversekmp.domain.repository.MovieRepository
 import com.albertiacob91.movieversekmp.domain.usecase.auth.GetCurrentUserUseCase
 import com.albertiacob91.movieversekmp.domain.usecase.auth.LoginUseCase
 import com.albertiacob91.movieversekmp.domain.usecase.auth.RegisterUseCase
+import com.albertiacob91.movieversekmp.domain.usecase.auth.UploadAvatarUseCase
 import com.albertiacob91.movieversekmp.domain.usecase.forum.CreateForumChatUseCase
 import com.albertiacob91.movieversekmp.domain.usecase.forum.CreateForumMessageUseCase
+import com.albertiacob91.movieversekmp.domain.usecase.forum.DeleteForumChatUseCase
 import com.albertiacob91.movieversekmp.domain.usecase.forum.GetForumChatsUseCase
 import com.albertiacob91.movieversekmp.domain.usecase.forum.GetForumMessagesUseCase
 import com.albertiacob91.movieversekmp.domain.usecase.movies.CheckIsFavoriteUseCase
@@ -55,11 +57,13 @@ val useCaseModule = module {
     factory { PostCommentUseCase(get()) }
     factory { GetForumChatsUseCase(get()) }
     factory { CreateForumChatUseCase(get()) }
+    factory { DeleteForumChatUseCase(get()) }
     factory { GetForumMessagesUseCase(get()) }
     factory { CreateForumMessageUseCase(get()) }
     factory { LoginUseCase(get(), get()) }
     factory { RegisterUseCase(get()) }
     factory { GetCurrentUserUseCase(get(), get()) }
+    factory { UploadAvatarUseCase(get(), get()) }
 }
 
 val viewModelModule = module {

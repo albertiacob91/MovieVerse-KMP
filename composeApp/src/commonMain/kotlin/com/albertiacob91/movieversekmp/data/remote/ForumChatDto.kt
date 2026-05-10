@@ -7,5 +7,6 @@ data class ForumChatDto(
     val id: String,
     val title: String,
     val createdBy: String,
+    val userId: String,
     val createdAt: String
 )

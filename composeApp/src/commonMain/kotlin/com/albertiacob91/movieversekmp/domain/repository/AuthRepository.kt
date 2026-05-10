@@ -7,4 +7,5 @@ interface AuthRepository {
     suspend fun login(email: String, password: String): AuthResponseDto
     suspend fun register(username: String, email: String, password: String): AuthResponseDto
     suspend fun getMe(token: String): MeResponseDto?
+    suspend fun uploadAvatar(token: String, avatarBase64: String): Boolean
 }
