@@ -1,7 +1,7 @@
 package com.albertiacob91.movieversekmp
 
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import com.albertiacob91.movieversekmp.di.appModules
 import com.albertiacob91.movieversekmp.presentation.MovieVerseApp
 import com.albertiacob91.movieversekmp.presentation.theme.MovieVerseTheme
@@ -12,9 +12,13 @@ fun App() {
     KoinApplication(application = {
         modules(appModules)
     }) {
-        MovieVerseTheme {
+        var isDarkTheme by remember { mutableStateOf(true) }
+        MovieVerseTheme(darkTheme = isDarkTheme) {
             Surface {
-                MovieVerseApp()
+                MovieVerseApp(
+                    isDarkTheme = isDarkTheme,
+                    onThemeToggle = { isDarkTheme = !isDarkTheme }
+                )
             }
         }
     }

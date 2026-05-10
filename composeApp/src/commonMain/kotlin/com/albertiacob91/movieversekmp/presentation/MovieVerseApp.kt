@@ -4,6 +4,12 @@ import androidx.compose.runtime.Composable
 import com.albertiacob91.movieversekmp.navigation.MovieVerseNavigation
 
 @Composable
-fun MovieVerseApp() {
-    MovieVerseNavigation()
+fun MovieVerseApp(
+    isDarkTheme: Boolean,
+    onThemeToggle: () -> Unit
+) {
+    MovieVerseNavigation(
+        isDarkTheme = isDarkTheme,
+        onThemeToggle = onThemeToggle
+    )
 }
