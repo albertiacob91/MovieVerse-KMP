@@ -1,25 +1,25 @@
 package com.albertiacob91.movieversekmp.presentation.screens.forum
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SwipeToDismissBox
@@ -30,15 +30,20 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.albertiacob91.movieversekmp.data.remote.ForumChatDto
 import com.albertiacob91.movieversekmp.presentation.theme.Dimens
 import com.albertiacob91.movieversekmp.presentation.viewmodel.ForumViewModel
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalEncodingApi::class)
 @Composable
 fun ForumScreen(
     contentPadding: PaddingValues,
@@ -137,46 +142,56 @@ fun ForumScreen(
                         .padding(top = Dimens.mediumSpacing),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(state.chats, key = { it.id }) { chat ->
-                        val isOwner = chat.userId == state.currentUserId
+                    items(state.chats) { chat ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onChatClick(chat) },
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(chat.title)
 
-                        if (isOwner) {
-                            val dismissState = rememberSwipeToDismissBoxState(
-                                confirmValueChange = { value ->
-                                    if (value == SwipeToDismissBoxValue.EndToStart) {
-                                        chatToDelete = chat
+                                Row(
+                                    modifier = Modifier.padding(top = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    val avatarBytes = remember(chat.avatarUrl) {
+                                        chat.avatarUrl?.let { runCatching { Base64.decode(it) }.getOrNull() }
                                     }
-                                    false
-                                }
-                            )
 
-                            val bgColor by animateColorAsState(
-                                if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart)
-                                    MaterialTheme.colorScheme.errorContainer
-                                else
-                                    MaterialTheme.colorScheme.surfaceVariant
-                            )
-
-                            SwipeToDismissBox(
-                                state = dismissState,
-                                enableDismissFromStartToEnd = false,
-                                backgroundContent = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(bgColor, shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-                                            .padding(end = 20.dp),
-                                        contentAlignment = Alignment.CenterEnd
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = "Eliminar",
-                                            tint = MaterialTheme.colorScheme.onErrorContainer
+                                    if (avatarBytes != null) {
+                                        AsyncImage(
+                                            model = avatarBytes,
+                                            contentDescription = "Avatar de ${chat.createdBy}",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                                .clip(CircleShape)
                                         )
+                                    } else {
+                                        val initial = chat.createdBy.trim().take(1).uppercase()
+                                        Box(
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                                .clip(CircleShape)
+                                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = initial,
+                                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold)
+                                            )
+                                        }
                                     }
+
+                                    Spacer(modifier = Modifier.width(6.dp))
+
+                                    Text(
+                                        text = "Creado por: ${chat.createdBy}",
+                                        modifier = Modifier.padding(top = 0.dp)
+                                    )
                                 }
-                            ) {
-                                ChatCard(chat = chat, onClick = { onChatClick(chat) })
                             }
                         } else {
                             ChatCard(chat = chat, onClick = { onChatClick(chat) })

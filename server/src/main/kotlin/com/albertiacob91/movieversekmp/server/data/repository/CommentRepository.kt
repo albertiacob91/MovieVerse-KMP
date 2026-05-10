@@ -28,7 +28,8 @@ class CommentRepository {
                     movieId = it[CommentsTable.movieId],
                     userId = it[CommentsTable.userId].toString(),
                     username = it[UsersTable.username],
-                    content = it[CommentsTable.content]
+                    content = it[CommentsTable.content],
+                    avatarUrl = it[UsersTable.avatarUrl]
                 )
             }
     }
@@ -57,5 +58,6 @@ data class CommentRecord(
     val movieId: Int,
     val userId: String,
     val username: String,
-    val content: String
+    val content: String,
+    val avatarUrl: String? = null
 )

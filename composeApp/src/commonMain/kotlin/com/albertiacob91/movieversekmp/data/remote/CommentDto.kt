@@ -8,5 +8,6 @@ data class CommentDto(
     val movieId: Int,
     val userId: String,
     val username: String,
-    val content: String
+    val content: String,
+    val avatarUrl: String? = null
 )
