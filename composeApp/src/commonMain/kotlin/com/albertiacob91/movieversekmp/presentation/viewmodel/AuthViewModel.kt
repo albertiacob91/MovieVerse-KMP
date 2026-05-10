@@ -36,6 +36,7 @@ class AuthViewModel(
             }
             val me = runCatching { getCurrentUserUseCase() }.getOrNull()
             if (me != null) {
+                sessionStorage.saveUserId(me.id)
                 _state.update { it.copy(isCheckingSession = false, isLoggedIn = true) }
             } else {
                 sessionStorage.clearSession()

@@ -10,11 +10,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,6 +34,7 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.albertiacob91.movieversekmp.data.remote.MovieDto
+import com.albertiacob91.movieversekmp.presentation.theme.GoldStar
 
 @Composable
 fun MovieCard(
@@ -48,26 +53,21 @@ fun MovieCard(
         if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
     } ?: "-"
 
-    val runtimeText = movie.runtime?.toString() ?: "--"
-
-    val genresToShow = if (movie.genres.isNotEmpty()) {
-        movie.genres.take(3)
-    } else {
-        listOf("Película")
-    }
+    val genresToShow = if (movie.genres.isNotEmpty()) movie.genres.take(3) else listOf("Película")
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
             .clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        shape = MaterialTheme.shapes.extraLarge,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp),
+                .padding(14.dp),
             verticalAlignment = Alignment.Top
         ) {
             movie.posterUrl?.let { posterUrl ->
@@ -78,52 +78,43 @@ fun MovieCard(
                         .build(),
                     contentDescription = movie.title,
                     modifier = Modifier
-                        .width(108.dp)
-                        .height(156.dp)
-                        .clip(RoundedCornerShape(18.dp)),
+                        .width(96.dp)
+                        .height(144.dp)
+                        .clip(MaterialTheme.shapes.large),
                     contentScale = ContentScale.Crop
                 )
             } ?: Box(
                 modifier = Modifier
-                    .width(108.dp)
-                    .height(156.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .width(96.dp)
+                    .height(144.dp)
+                    .clip(MaterialTheme.shapes.large)
+                    .background(MaterialTheme.colorScheme.surface)
             )
 
-            Spacer(modifier = Modifier.width(18.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = movie.title.uppercase(),
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Normal
-                    ),
+                    text = movie.title,
+                    style = MaterialTheme.typography.titleLarge,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    SmallInfoPill("★ $ratingText")
-                    SmallInfoPill(year)
-                    SmallInfoPill(runtimeText)
+                    RatingBadge(ratingText)
+                    InfoPill(year)
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    genresToShow.forEach { genre ->
-                        GenrePill(genre)
-                    }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    genresToShow.forEach { genre -> GenrePill(genre) }
                 }
             }
         }
@@ -131,17 +122,38 @@ fun MovieCard(
 }
 
 @Composable
-private fun SmallInfoPill(text: String) {
+private fun RatingBadge(rating: String) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Star,
+            contentDescription = null,
+            tint = GoldStar,
+            modifier = Modifier.size(13.dp)
+        )
+        Text(
+            text = rating,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
+private fun InfoPill(text: String) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelMedium
-        )
+        Text(text = text, style = MaterialTheme.typography.labelMedium)
     }
 }
 
@@ -149,13 +161,14 @@ private fun SmallInfoPill(text: String) {
 private fun GenrePill(text: String) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.labelMedium
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
         )
     }
 }

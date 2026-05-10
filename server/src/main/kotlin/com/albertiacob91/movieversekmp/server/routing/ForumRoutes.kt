@@ -13,10 +13,13 @@ import io.ktor.server.application.call
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -103,6 +106,60 @@ fun Route.forumRoutes() {
                     avatarUrl = userRow[UsersTable.avatarUrl]
                 )
             )
+        }
+
+        delete("/chats/{chatId}") {
+            val authHeader = call.request.headers["Authorization"]
+
+            if (authHeader.isNullOrBlank() || !authHeader.startsWith("Bearer ")) {
+                call.respond(HttpStatusCode.Unauthorized, mapOf("message" to "Token missing"))
+                return@delete
+            }
+
+            val token = authHeader.removePrefix("Bearer ").trim()
+            val chatId = call.parameters["chatId"]?.let {
+                runCatching { UUID.fromString(it) }.getOrNull()
+            }
+
+            if (chatId == null) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Invalid chat id"))
+                return@delete
+            }
+
+            val sessionUserId = transaction {
+                SessionsTable
+                    .selectAll()
+                    .firstOrNull { row -> row[SessionsTable.token] == token }
+                    ?.get(SessionsTable.userId)
+            }
+
+            if (sessionUserId == null) {
+                call.respond(HttpStatusCode.Unauthorized, mapOf("message" to "Invalid session"))
+                return@delete
+            }
+
+            val chatOwnerId = transaction {
+                ForumChatsTable.selectAll()
+                    .firstOrNull { row -> row[ForumChatsTable.id] == chatId }
+                    ?.get(ForumChatsTable.userId)
+            }
+
+            if (chatOwnerId == null) {
+                call.respond(HttpStatusCode.NotFound, mapOf("message" to "Chat not found"))
+                return@delete
+            }
+
+            if (chatOwnerId != sessionUserId) {
+                call.respond(HttpStatusCode.Forbidden, mapOf("message" to "Not authorized"))
+                return@delete
+            }
+
+            transaction {
+                ForumMessagesTable.deleteWhere { ForumMessagesTable.chatId eq chatId }
+                ForumChatsTable.deleteWhere { ForumChatsTable.id eq chatId }
+            }
+
+            call.respond(HttpStatusCode.OK, mapOf("message" to "Chat deleted"))
         }
 
         get("/chats/{chatId}/messages") {

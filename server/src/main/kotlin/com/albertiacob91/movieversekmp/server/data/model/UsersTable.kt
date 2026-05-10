@@ -8,6 +8,7 @@ object UsersTable : Table("users") {
     val username = varchar("username", 50).uniqueIndex()
     val email = varchar("email", 120).uniqueIndex()
     val passwordHash = text("password_hash")
+    val avatarUrl = text("avatar_url").nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 

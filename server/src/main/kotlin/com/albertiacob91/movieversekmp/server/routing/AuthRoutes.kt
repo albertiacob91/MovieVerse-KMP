@@ -1,12 +1,14 @@
 package com.albertiacob91.movieversekmp.server.routing
 
 import com.albertiacob91.movieversekmp.server.auth.PasswordHasher
+import com.albertiacob91.movieversekmp.server.data.model.SessionsTable
 import com.albertiacob91.movieversekmp.server.data.repository.SessionRepository
 import com.albertiacob91.movieversekmp.server.data.repository.UserRepository
 import com.albertiacob91.movieversekmp.server.dto.AuthResponse
 import com.albertiacob91.movieversekmp.server.dto.LoginRequest
 import com.albertiacob91.movieversekmp.server.dto.MeResponse
 import com.albertiacob91.movieversekmp.server.dto.RegisterRequest
+import com.albertiacob91.movieversekmp.server.dto.UpdateAvatarRequest
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.header
@@ -16,11 +18,23 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.UUID
 
 fun Route.authRoutes() {
     val userRepository = UserRepository()
     val sessionRepository = SessionRepository()
+
+    fun resolveUserFromToken(authHeader: String?): UUID? {
+        if (authHeader.isNullOrBlank() || !authHeader.startsWith("Bearer ")) return null
+        val token = authHeader.removePrefix("Bearer ").trim()
+        return transaction {
+            SessionsTable.selectAll()
+                .firstOrNull { it[SessionsTable.token] == token }
+                ?.get(SessionsTable.userId)
+        }
+    }
 
     route("/auth") {
         post("/register") {
@@ -105,9 +119,27 @@ fun Route.authRoutes() {
                 MeResponse(
                     id = user.id,
                     username = user.username,
-                    email = user.email
+                    email = user.email,
+                    avatarUrl = user.avatarUrl
                 )
             )
+        }
+
+        post("/profile/avatar") {
+            val userId = resolveUserFromToken(call.request.header("Authorization"))
+            if (userId == null) {
+                call.respond(HttpStatusCode.Unauthorized, mapOf("message" to "Invalid or expired session"))
+                return@post
+            }
+
+            val request = call.receive<UpdateAvatarRequest>()
+            if (request.avatarBase64.isBlank()) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Avatar data required"))
+                return@post
+            }
+
+            userRepository.updateAvatar(userId, request.avatarBase64)
+            call.respond(HttpStatusCode.OK, mapOf("message" to "Avatar updated"))
         }
     }
 }
