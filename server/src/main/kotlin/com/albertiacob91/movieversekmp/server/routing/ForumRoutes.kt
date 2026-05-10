@@ -36,7 +36,9 @@ fun Route.forumRoutes() {
                             id = it[ForumChatsTable.id].toString(),
                             title = it[ForumChatsTable.title],
                             createdBy = it[UsersTable.username],
-                            createdAt = it[ForumChatsTable.createdAt].toString()
+                            userId = it[ForumChatsTable.userId].toString(),
+                            createdAt = it[ForumChatsTable.createdAt].toString(),
+                            avatarUrl = it[UsersTable.avatarUrl]
                         )
                     }
             }
@@ -84,10 +86,10 @@ fun Route.forumRoutes() {
                 }
             }
 
-            val username = transaction {
+            val userRow = transaction {
                 UsersTable
                     .selectAll()
-                    .first { row -> row[UsersTable.id] == sessionUserId }[UsersTable.username]
+                    .first { row -> row[UsersTable.id] == sessionUserId }
             }
 
             call.respond(
@@ -95,8 +97,10 @@ fun Route.forumRoutes() {
                 ForumChatResponse(
                     id = newId.toString(),
                     title = request.title.trim(),
-                    createdBy = username,
-                    createdAt = createdAt.toString()
+                    createdBy = userRow[UsersTable.username],
+                    userId = sessionUserId.toString(),
+                    createdAt = createdAt.toString(),
+                    avatarUrl = userRow[UsersTable.avatarUrl]
                 )
             )
         }
@@ -123,6 +127,7 @@ fun Route.forumRoutes() {
                             content = it[ForumMessagesTable.content],
                             username = it[UsersTable.username],
                             userId = it[UsersTable.id].toString(),
+                            avatarUrl = it[UsersTable.avatarUrl],
                             createdAt = it[ForumMessagesTable.createdAt].toString()
                         )
                     }
@@ -192,10 +197,10 @@ fun Route.forumRoutes() {
                 }
             }
 
-            val username = transaction {
+            val userRow = transaction {
                 UsersTable
                     .selectAll()
-                    .first { row -> row[UsersTable.id] == sessionUserId }[UsersTable.username]
+                    .first { row -> row[UsersTable.id] == sessionUserId }
             }
 
             call.respond(
@@ -204,8 +209,9 @@ fun Route.forumRoutes() {
                     id = newId.toString(),
                     chatId = chatId.toString(),
                     content = request.content.trim(),
-                    username = username,
+                    username = userRow[UsersTable.username],
                     userId = sessionUserId.toString(),
+                    avatarUrl = userRow[UsersTable.avatarUrl],
                     createdAt = createdAt.toString()
                 )
             )

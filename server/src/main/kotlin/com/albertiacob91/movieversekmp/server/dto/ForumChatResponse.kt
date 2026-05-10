@@ -7,5 +7,7 @@ data class ForumChatResponse(
     val id: String,
     val title: String,
     val createdBy: String,
-    val createdAt: String
+    val userId: String,
+    val createdAt: String,
+    val avatarUrl: String? = null
 )
