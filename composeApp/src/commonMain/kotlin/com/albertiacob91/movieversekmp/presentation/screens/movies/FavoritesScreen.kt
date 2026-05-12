@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.albertiacob91.movieversekmp.presentation.components.MovieCard
 import com.albertiacob91.movieversekmp.presentation.theme.Dimens
@@ -39,8 +40,9 @@ fun FavoritesScreen(
             .fillMaxSize()
             .padding(contentPadding)
     ) {
+        val isLandscapeMobile = maxWidth > maxHeight && maxWidth < 900.dp
         val sizeClass = windowSizeClassFor(maxWidth)
-        val columns = Dimens.gridColumns(sizeClass)
+        val columns = if (isLandscapeMobile) 4 else Dimens.gridColumns(sizeClass)
         val gridMode = columns > 1
 
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {

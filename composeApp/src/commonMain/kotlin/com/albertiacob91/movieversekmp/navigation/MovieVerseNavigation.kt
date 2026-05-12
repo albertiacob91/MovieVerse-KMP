@@ -1,5 +1,8 @@
 package com.albertiacob91.movieversekmp.navigation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
@@ -25,8 +28,13 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.albertiacob91.movieversekmp.presentation.components.LoadingScreen
 import com.albertiacob91.movieversekmp.presentation.screens.auth.LoginScreen
@@ -42,6 +50,34 @@ import org.koin.compose.viewmodel.koinViewModel
 
 private enum class AuthFlowScreen { Login, Register }
 
+private val MovieScreenSaver = Saver<MovieScreen, String>(
+    save = { screen ->
+        when (screen) {
+            MovieScreen.Home -> "Home"
+            MovieScreen.Favorites -> "Favorites"
+            MovieScreen.Forum -> "Forum"
+            MovieScreen.Profile -> "Profile"
+            is MovieScreen.Detail -> "Detail:${screen.movieId}"
+            is MovieScreen.ForumChatDetail -> "ForumChat:${screen.chatId}:${screen.title}"
+        }
+    },
+    restore = { saved ->
+        when {
+            saved == "Home" -> MovieScreen.Home
+            saved == "Favorites" -> MovieScreen.Favorites
+            saved == "Forum" -> MovieScreen.Forum
+            saved == "Profile" -> MovieScreen.Profile
+            saved.startsWith("Detail:") -> MovieScreen.Detail(saved.removePrefix("Detail:").toInt())
+            saved.startsWith("ForumChat:") -> {
+                val rest = saved.removePrefix("ForumChat:")
+                val colon = rest.indexOf(':')
+                MovieScreen.ForumChatDetail(rest.substring(0, colon), rest.substring(colon + 1))
+            }
+            else -> MovieScreen.Home
+        }
+    }
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MovieVerseNavigation(
@@ -52,8 +88,8 @@ fun MovieVerseNavigation(
     val authState by authViewModel.state.collectAsStateWithLifecycle()
 
     var authFlowScreen by remember { mutableStateOf(AuthFlowScreen.Login) }
-    var movieScreen by remember { mutableStateOf<MovieScreen>(MovieScreen.Home) }
-    var lastListScreen by remember { mutableStateOf<MovieScreen>(MovieScreen.Home) }
+    var movieScreen by rememberSaveable(stateSaver = MovieScreenSaver) { mutableStateOf<MovieScreen>(MovieScreen.Home) }
+    var lastListScreen by rememberSaveable(stateSaver = MovieScreenSaver) { mutableStateOf<MovieScreen>(MovieScreen.Home) }
     var searchVisible by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val homeListState = rememberLazyGridState()
@@ -114,9 +150,29 @@ fun MovieVerseNavigation(
                 MovieScreen.Favorites,
                 MovieScreen.Forum,
                 MovieScreen.Profile -> {
+                    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+                    var isScrollingDown by remember { mutableStateOf(false) }
+                    val bottomScrollConnection = remember {
+                        object : NestedScrollConnection {
+                            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                                if (available.y < -5f) isScrollingDown = true
+                                else if (available.y > 5f) isScrollingDown = false
+                                return Offset.Zero
+                            }
+                        }
+                    }
+                    LaunchedEffect(movieScreen) {
+                        isScrollingDown = false
+                        scrollBehavior.state.heightOffset = 0f
+                    }
+
                     Scaffold(
+                        modifier = Modifier
+                            .nestedScroll(scrollBehavior.nestedScrollConnection)
+                            .nestedScroll(bottomScrollConnection),
                         topBar = {
                             TopAppBar(
+                                scrollBehavior = scrollBehavior,
                                 colors = TopAppBarDefaults.topAppBarColors(
                                     containerColor = MaterialTheme.colorScheme.surface,
                                     titleContentColor = MaterialTheme.colorScheme.onSurface,
@@ -178,6 +234,11 @@ fun MovieVerseNavigation(
                             )
                         },
                         bottomBar = {
+                            AnimatedVisibility(
+                                visible = !isScrollingDown,
+                                enter = slideInVertically(initialOffsetY = { it }),
+                                exit = slideOutVertically(targetOffsetY = { it })
+                            ) {
                             NavigationBar(
                                 containerColor = MaterialTheme.colorScheme.surface,
                                 contentColor = MaterialTheme.colorScheme.onSurface
@@ -217,6 +278,7 @@ fun MovieVerseNavigation(
                                     icon = { Icon(Icons.Default.AccountCircle, contentDescription = "Perfil") },
                                     label = { Text("Perfil") }
                                 )
+                            }
                             }
                         }
                     ) { innerPadding ->
