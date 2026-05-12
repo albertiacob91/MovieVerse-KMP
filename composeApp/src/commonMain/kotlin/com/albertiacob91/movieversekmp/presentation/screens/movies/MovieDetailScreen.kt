@@ -3,6 +3,7 @@ package com.albertiacob91.movieversekmp.presentation.screens.movies
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -46,6 +48,7 @@ import coil3.request.crossfade
 import com.albertiacob91.movieversekmp.presentation.components.CastItem
 import com.albertiacob91.movieversekmp.presentation.components.CommentItem
 import com.albertiacob91.movieversekmp.presentation.components.TrailerPlayer
+import com.albertiacob91.movieversekmp.presentation.theme.Dimens
 import com.albertiacob91.movieversekmp.presentation.theme.GoldStar
 import com.albertiacob91.movieversekmp.presentation.viewmodel.MovieDetailViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -70,197 +73,203 @@ fun MovieDetailScreen(
         }
     }
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        item {
-            DetailTopBar(
-                title = state.movie?.title ?: "",
-                isFavorite = state.isFavorite,
-                onBackClick = onBackClick,
-                onFavoriteClick = { viewModel.toggleFavorite(movieId) }
-            )
-        }
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val mediaHeight = (maxWidth * 0.5625f).coerceIn(200.dp, 450.dp)
 
-        when {
-            state.isLoading -> {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            LazyColumn(modifier = Modifier.fillMaxSize().widthIn(max = Dimens.maxContentWidth)) {
                 item {
-                    Text(
-                        text = "Cargando detalle...",
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    DetailTopBar(
+                        title = state.movie?.title ?: "",
+                        isFavorite = state.isFavorite,
+                        onBackClick = onBackClick,
+                        onFavoriteClick = { viewModel.toggleFavorite(movieId) }
                     )
                 }
-            }
 
-            state.error.isNotBlank() -> {
-                item {
-                    Text(
-                        text = "Error: ${state.error}",
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
+                when {
+                    state.isLoading -> {
+                        item {
+                            Text(
+                                text = "Cargando detalle...",
+                                modifier = Modifier.padding(16.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
 
-            state.movie != null -> {
-                item {
-                    val currentMovie = state.movie!!
+                    state.error.isNotBlank() -> {
+                        item {
+                            Text(
+                                text = "Error: ${state.error}",
+                                modifier = Modifier.padding(16.dp),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        if (!currentMovie.trailerUrl.isNullOrBlank()) {
-                            TrailerPlayer(
-                                trailerUrl = currentMovie.trailerUrl,
+                    state.movie != null -> {
+                        item {
+                            val currentMovie = state.movie!!
+
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(400.dp)
-                                    .clip(MaterialTheme.shapes.large)
-                            )
-                            Spacer(modifier = Modifier.height(18.dp))
-                        } else {
-                            currentMovie.posterUrl?.let { posterUrl ->
-                                AsyncImage(
-                                    model = ImageRequest.Builder(context)
-                                        .data(posterUrl)
-                                        .crossfade(true)
-                                        .build(),
-                                    contentDescription = currentMovie.title,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(400.dp)
-                                        .clip(MaterialTheme.shapes.large),
-                                    contentScale = ContentScale.Crop
+                                    .padding(16.dp)
+                            ) {
+                                if (!currentMovie.trailerUrl.isNullOrBlank()) {
+                                    TrailerPlayer(
+                                        trailerUrl = currentMovie.trailerUrl,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(mediaHeight)
+                                            .clip(MaterialTheme.shapes.large)
+                                    )
+                                    Spacer(modifier = Modifier.height(18.dp))
+                                } else {
+                                    currentMovie.posterUrl?.let { posterUrl ->
+                                        AsyncImage(
+                                            model = ImageRequest.Builder(context)
+                                                .data(posterUrl)
+                                                .crossfade(true)
+                                                .build(),
+                                            contentDescription = currentMovie.title,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(mediaHeight)
+                                                .clip(MaterialTheme.shapes.large),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                        Spacer(modifier = Modifier.height(18.dp))
+                                    }
+                                }
+
+                                Text(
+                                    text = currentMovie.title,
+                                    style = MaterialTheme.typography.headlineSmall
                                 )
-                                Spacer(modifier = Modifier.height(18.dp))
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    val ratingText = currentMovie.voteAverage?.let {
+                                        val rounded = ((it * 10).toInt() / 10.0)
+                                        if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
+                                    } ?: "-"
+                                    val yearText = currentMovie.releaseDate?.takeIf { it.length >= 4 }?.substring(0, 4) ?: "----"
+                                    val runtimeText = currentMovie.runtime?.let { "$it min" } ?: "--"
+
+                                    DetailInfoPill(
+                                        icon = {
+                                            Icon(
+                                                Icons.Default.Star,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(14.dp),
+                                                tint = GoldStar
+                                            )
+                                        },
+                                        text = ratingText
+                                    )
+                                    DetailInfoPill(
+                                        icon = {
+                                            Icon(
+                                                Icons.Default.CalendarToday,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                        },
+                                        text = yearText
+                                    )
+                                    DetailInfoPill(
+                                        icon = {
+                                            Icon(
+                                                Icons.Default.Schedule,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                        },
+                                        text = runtimeText
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    val genres = currentMovie.genres.takeIf { it.isNotEmpty() } ?: listOf("Película")
+                                    genres.take(5).forEach { genre -> GenrePill(genre) }
+                                }
+
+                                if (currentMovie.cast.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(24.dp))
+                                    Text(
+                                        text = "Reparto principal",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        items(currentMovie.cast) { castMember -> CastItem(castMember) }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(24.dp))
+
+                                Text(text = "Sinopsis", style = MaterialTheme.typography.titleMedium)
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text(
+                                    text = currentMovie.overview.ifBlank { "Sin descripción" },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                if (state.favoriteMessage.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = state.favoriteMessage,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(28.dp))
+
+                                Text(text = "Comentarios", style = MaterialTheme.typography.titleMedium)
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                OutlinedTextField(
+                                    value = commentText,
+                                    onValueChange = { commentText = it },
+                                    label = { Text("Escribe un comentario") },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Button(onClick = { viewModel.postComment(movieId, commentText) }) {
+                                    Text("Publicar comentario")
+                                }
+
+                                if (state.commentMessage.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = state.commentMessage,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
 
-                        Text(
-                            text = currentMovie.title,
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            val ratingText = currentMovie.voteAverage?.let {
-                                val rounded = ((it * 10).toInt() / 10.0)
-                                if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
-                            } ?: "-"
-                            val yearText = currentMovie.releaseDate?.takeIf { it.length >= 4 }?.substring(0, 4) ?: "----"
-                            val runtimeText = currentMovie.runtime?.let { "$it min" } ?: "--"
-
-                            DetailInfoPill(
-                                icon = {
-                                    Icon(
-                                        Icons.Default.Star,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp),
-                                        tint = GoldStar
-                                    )
-                                },
-                                text = ratingText
-                            )
-                            DetailInfoPill(
-                                icon = {
-                                    Icon(
-                                        Icons.Default.CalendarToday,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                },
-                                text = yearText
-                            )
-                            DetailInfoPill(
-                                icon = {
-                                    Icon(
-                                        Icons.Default.Schedule,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                },
-                                text = runtimeText
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            val genres = currentMovie.genres.takeIf { it.isNotEmpty() } ?: listOf("Película")
-                            genres.take(5).forEach { genre -> GenrePill(genre) }
-                        }
-
-                        if (currentMovie.cast.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(24.dp))
-                            Text(
-                                text = "Reparto principal",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                items(currentMovie.cast) { castMember -> CastItem(castMember) }
+                        items(state.comments.size) { index ->
+                            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                                CommentItem(state.comments[index])
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Text(text = "Sinopsis", style = MaterialTheme.typography.titleMedium)
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = currentMovie.overview.ifBlank { "Sin descripción" },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        if (state.favoriteMessage.isNotBlank()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = state.favoriteMessage,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(28.dp))
-
-                        Text(text = "Comentarios", style = MaterialTheme.typography.titleMedium)
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        OutlinedTextField(
-                            value = commentText,
-                            onValueChange = { commentText = it },
-                            label = { Text("Escribe un comentario") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Button(onClick = { viewModel.postComment(movieId, commentText) }) {
-                            Text("Publicar comentario")
-                        }
-
-                        if (state.commentMessage.isNotBlank()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = state.commentMessage,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
+                        item { Spacer(modifier = Modifier.height(24.dp)) }
                     }
                 }
-
-                items(state.comments.size) { index ->
-                    Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-                        CommentItem(state.comments[index])
-                    }
-                }
-
-                item { Spacer(modifier = Modifier.height(24.dp)) }
             }
         }
     }

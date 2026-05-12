@@ -1,7 +1,7 @@
 package com.albertiacob91.movieversekmp.navigation
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Close
@@ -56,7 +56,7 @@ fun MovieVerseNavigation(
     var lastListScreen by remember { mutableStateOf<MovieScreen>(MovieScreen.Home) }
     var searchVisible by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    val homeListState = rememberLazyListState()
+    val homeListState = rememberLazyGridState()
 
     LaunchedEffect(Unit) {
         authViewModel.checkSession()
