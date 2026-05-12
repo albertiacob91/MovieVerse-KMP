@@ -66,8 +66,9 @@ fun MoviesScreen(
             .fillMaxSize()
             .padding(contentPadding)
     ) {
+        val isLandscapeMobile = maxWidth > maxHeight && maxWidth < 900.dp
         val sizeClass = windowSizeClassFor(maxWidth)
-        val columns = Dimens.gridColumns(sizeClass)
+        val columns = if (isLandscapeMobile) 4 else Dimens.gridColumns(sizeClass)
         val gridMode = columns > 1
 
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
