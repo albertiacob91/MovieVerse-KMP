@@ -12,7 +12,7 @@ object Dimens {
     val maxContentWidth = 1100.dp
     val gridColumns: (WindowSizeClass) -> Int = { sizeClass ->
         when (sizeClass) {
-            WindowSizeClass.COMPACT -> 1
+            WindowSizeClass.COMPACT -> 2
             WindowSizeClass.MEDIUM -> 2
             WindowSizeClass.EXPANDED -> 3
         }
