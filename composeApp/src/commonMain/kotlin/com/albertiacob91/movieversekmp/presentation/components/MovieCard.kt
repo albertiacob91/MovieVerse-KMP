@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -39,7 +40,8 @@ import com.albertiacob91.movieversekmp.presentation.theme.GoldStar
 @Composable
 fun MovieCard(
     movie: MovieDto,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    gridMode: Boolean = false
 ) {
     val context = LocalPlatformContext.current
 
@@ -64,57 +66,105 @@ fun MovieCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            movie.posterUrl?.let { posterUrl ->
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(posterUrl)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = movie.title,
+        if (gridMode) {
+            Column {
+                movie.posterUrl?.let { posterUrl ->
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(posterUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = movie.title,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(2f / 3f)
+                            .clip(MaterialTheme.shapes.extraLarge),
+                        contentScale = ContentScale.Crop
+                    )
+                } ?: Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(2f / 3f)
+                        .clip(MaterialTheme.shapes.extraLarge)
+                        .background(MaterialTheme.colorScheme.surface)
+                )
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Text(
+                        text = movie.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RatingBadge(ratingText)
+                        InfoPill(year)
+                        movie.runtime?.let { InfoPill("${it}m") }
+                    }
+                    if (movie.genres.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            movie.genres.take(2).forEach { genre -> GenrePill(genre) }
+                        }
+                    }
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                movie.posterUrl?.let { posterUrl ->
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(posterUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = movie.title,
+                        modifier = Modifier
+                            .width(96.dp)
+                            .height(144.dp)
+                            .clip(MaterialTheme.shapes.large),
+                        contentScale = ContentScale.Crop
+                    )
+                } ?: Box(
                     modifier = Modifier
                         .width(96.dp)
                         .height(144.dp)
-                        .clip(MaterialTheme.shapes.large),
-                    contentScale = ContentScale.Crop
-                )
-            } ?: Box(
-                modifier = Modifier
-                    .width(96.dp)
-                    .height(144.dp)
-                    .clip(MaterialTheme.shapes.large)
-                    .background(MaterialTheme.colorScheme.surface)
-            )
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = movie.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                        .clip(MaterialTheme.shapes.large)
+                        .background(MaterialTheme.colorScheme.surface)
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.width(14.dp))
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RatingBadge(ratingText)
-                    InfoPill(year)
-                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = movie.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    genresToShow.forEach { genre -> GenrePill(genre) }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RatingBadge(ratingText)
+                        InfoPill(year)
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        genresToShow.forEach { genre -> GenrePill(genre) }
+                    }
                 }
             }
         }

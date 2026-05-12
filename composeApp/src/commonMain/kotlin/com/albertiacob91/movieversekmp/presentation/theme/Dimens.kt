@@ -9,4 +9,12 @@ object Dimens {
     val largeSpacing = 24.dp
     val posterCardHeight = 220.dp
     val posterDetailHeight = 320.dp
+    val maxContentWidth = 1100.dp
+    val gridColumns: (WindowSizeClass) -> Int = { sizeClass ->
+        when (sizeClass) {
+            WindowSizeClass.COMPACT -> 1
+            WindowSizeClass.MEDIUM -> 2
+            WindowSizeClass.EXPANDED -> 3
+        }
+    }
 }
