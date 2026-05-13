@@ -58,15 +58,17 @@ class MoviesViewModel(
             return
         }
 
+        _state.update {
+            it.copy(movies = firstPage, currentPage = 1, isLoading = false, pageSize = pageSize, nextTriggerIndex = pageSize, isLoadingMore = true)
+        }
+
         val secondPage = fetchPage(query, 2)
         _state.update {
             it.copy(
                 movies = firstPage + secondPage,
                 currentPage = if (secondPage.isNotEmpty()) 2 else 1,
                 endReached = secondPage.isEmpty(),
-                nextTriggerIndex = pageSize,
-                isLoading = false,
-                pageSize = pageSize
+                isLoadingMore = false
             )
         }
     }
