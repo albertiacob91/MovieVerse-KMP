@@ -98,6 +98,28 @@ fun MovieVerseNavigation(
         authViewModel.checkSession()
     }
 
+    val backEnabled = when {
+        !authState.isLoggedIn && authFlowScreen == AuthFlowScreen.Register -> true
+        authState.isLoggedIn && movieScreen is MovieScreen.Detail -> true
+        authState.isLoggedIn && movieScreen is MovieScreen.ForumChatDetail -> true
+        authState.isLoggedIn && searchVisible && movieScreen == MovieScreen.Home -> true
+        else -> false
+    }
+    BackHandler(enabled = backEnabled) {
+        when {
+            !authState.isLoggedIn && authFlowScreen == AuthFlowScreen.Register ->
+                authFlowScreen = AuthFlowScreen.Login
+            authState.isLoggedIn && movieScreen is MovieScreen.Detail ->
+                movieScreen = lastListScreen
+            authState.isLoggedIn && movieScreen is MovieScreen.ForumChatDetail ->
+                movieScreen = MovieScreen.Forum
+            authState.isLoggedIn && searchVisible -> {
+                searchVisible = false
+                searchQuery = ""
+            }
+        }
+    }
+
     when {
         authState.isCheckingSession -> {
             LoadingScreen()

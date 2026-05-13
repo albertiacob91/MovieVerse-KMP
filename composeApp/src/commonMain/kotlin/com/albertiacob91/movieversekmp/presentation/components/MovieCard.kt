@@ -102,7 +102,6 @@ fun MovieCard(
                     ) {
                         RatingBadge(ratingText)
                         InfoPill(year)
-                        movie.runtime?.let { InfoPill("${it}m") }
                     }
                     if (movie.genres.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(6.dp))
