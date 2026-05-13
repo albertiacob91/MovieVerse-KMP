@@ -39,7 +39,7 @@ val OnSurfaceVariantLight = Color(0xFF49454F)
 
 // Light primary
 val PrimaryLight = Color(0xFF5B3EC8)
-val PrimaryContainerLight = Color(0xFFEDE0FF)
+val PrimaryContainerLight = Color(0xFFB8A4E8)
 val OnPrimaryContainerLight = Color(0xFF21005D)
 
 // Light errors
