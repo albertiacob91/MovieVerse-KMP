@@ -3,6 +3,7 @@ package com.albertiacob91.movieversekmp.server.routing
 import com.albertiacob91.movieversekmp.server.data.remote.TmdbApi
 import com.albertiacob91.movieversekmp.server.data.remote.response.CastMemberResponse
 import com.albertiacob91.movieversekmp.server.data.remote.response.MovieResponse
+import com.albertiacob91.movieversekmp.server.data.remote.response.WatchProviderResponse
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -75,6 +76,7 @@ fun Route.movieRoutes(tmdbApi: TmdbApi) {
             val movie = tmdbApi.getMovieDetail(movieId)
             val credits = runCatching { tmdbApi.getMovieCredits(movieId) }.getOrNull()
             val videos = runCatching { tmdbApi.getMovieVideos(movieId) }.getOrNull()
+            val providers = runCatching { tmdbApi.getMovieWatchProviders(movieId) }.getOrNull()
 
             val trailer = videos?.results?.firstOrNull {
                 it.site.equals("YouTube", ignoreCase = true) &&
@@ -84,6 +86,19 @@ fun Route.movieRoutes(tmdbApi: TmdbApi) {
             }
 
             val trailerUrl = trailer?.key?.let { "https://www.youtube.com/watch?v=$it" }
+
+            val regionProviders = providers?.results?.get("ES") ?: providers?.results?.get("US")
+            val watchProviders = buildList {
+                regionProviders?.flatrate?.forEach { p ->
+                    add(WatchProviderResponse(p.providerName, p.logoPath?.let { "https://image.tmdb.org/t/p/w92$it" }, "streaming"))
+                }
+                regionProviders?.rent?.forEach { p ->
+                    add(WatchProviderResponse(p.providerName, p.logoPath?.let { "https://image.tmdb.org/t/p/w92$it" }, "rent"))
+                }
+                regionProviders?.buy?.forEach { p ->
+                    add(WatchProviderResponse(p.providerName, p.logoPath?.let { "https://image.tmdb.org/t/p/w92$it" }, "buy"))
+                }
+            }
 
             val response = MovieResponse(
                 id = movie.id,
@@ -104,7 +119,8 @@ fun Route.movieRoutes(tmdbApi: TmdbApi) {
                         }
                     )
                 } ?: emptyList(),
-                trailerUrl = trailerUrl
+                trailerUrl = trailerUrl,
+                watchProviders = watchProviders
             )
 
             call.respond(HttpStatusCode.OK, response)

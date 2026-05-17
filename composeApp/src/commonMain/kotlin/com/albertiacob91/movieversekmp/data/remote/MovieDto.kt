@@ -13,5 +13,6 @@ data class MovieDto(
     val runtime: Int? = null,
     val genres: List<String> = emptyList(),
     val cast: List<CastMemberDto> = emptyList(),
-    val trailerUrl: String? = null
+    val trailerUrl: String? = null,
+    val watchProviders: List<WatchProviderDto> = emptyList()
 )
