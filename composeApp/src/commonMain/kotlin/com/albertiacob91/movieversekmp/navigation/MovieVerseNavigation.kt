@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Favorite
@@ -92,6 +93,9 @@ fun MovieVerseNavigation(
     var lastListScreen by rememberSaveable(stateSaver = MovieScreenSaver) { mutableStateOf<MovieScreen>(MovieScreen.Home) }
     var searchVisible by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    var forumSearchVisible by rememberSaveable { mutableStateOf(false) }
+    var forumSearchQuery by rememberSaveable { mutableStateOf("") }
+    var forumShowCreateDialog by rememberSaveable { mutableStateOf(false) }
     val homeListState = rememberLazyGridState()
 
     LaunchedEffect(Unit) {
@@ -103,6 +107,7 @@ fun MovieVerseNavigation(
         authState.isLoggedIn && movieScreen is MovieScreen.Detail -> true
         authState.isLoggedIn && movieScreen is MovieScreen.ForumChatDetail -> true
         authState.isLoggedIn && searchVisible && movieScreen == MovieScreen.Home -> true
+        authState.isLoggedIn && forumSearchVisible && movieScreen == MovieScreen.Forum -> true
         else -> false
     }
     BackHandler(enabled = backEnabled) {
@@ -116,6 +121,10 @@ fun MovieVerseNavigation(
             authState.isLoggedIn && searchVisible -> {
                 searchVisible = false
                 searchQuery = ""
+            }
+            authState.isLoggedIn && forumSearchVisible -> {
+                forumSearchVisible = false
+                forumSearchQuery = ""
             }
         }
     }
@@ -202,36 +211,59 @@ fun MovieVerseNavigation(
                                     navigationIconContentColor = MaterialTheme.colorScheme.onSurface
                                 ),
                                 title = {
-                                    if (movieScreen == MovieScreen.Home && searchVisible) {
-                                        OutlinedTextField(
-                                            value = searchQuery,
-                                            onValueChange = { searchQuery = it },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            singleLine = true,
-                                            placeholder = { Text("Buscar película...") },
-                                            colors = TextFieldDefaults.colors(
-                                                focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                                                unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                cursorColor = MaterialTheme.colorScheme.primary
+                                    when {
+                                        movieScreen == MovieScreen.Home && searchVisible -> {
+                                            OutlinedTextField(
+                                                value = searchQuery,
+                                                onValueChange = { searchQuery = it },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                singleLine = true,
+                                                placeholder = { Text("Buscar película...") },
+                                                colors = TextFieldDefaults.colors(
+                                                    focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                                    unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                                    unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    cursorColor = MaterialTheme.colorScheme.primary
+                                                )
                                             )
-                                        )
-                                    } else {
-                                        Text(
-                                            text = when (movieScreen) {
-                                                MovieScreen.Home -> "MOVIEVERSE"
-                                                MovieScreen.Favorites -> "FAVORITAS"
-                                                MovieScreen.Forum -> "FORO"
-                                                MovieScreen.Profile -> "PERFIL"
-                                                else -> ""
-                                            },
-                                            style = MaterialTheme.typography.titleLarge
-                                        )
+                                        }
+                                        movieScreen == MovieScreen.Forum && forumSearchVisible -> {
+                                            OutlinedTextField(
+                                                value = forumSearchQuery,
+                                                onValueChange = { forumSearchQuery = it },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                singleLine = true,
+                                                placeholder = { Text("Buscar chat...") },
+                                                colors = TextFieldDefaults.colors(
+                                                    focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                                    unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                                    unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    cursorColor = MaterialTheme.colorScheme.primary
+                                                )
+                                            )
+                                        }
+                                        else -> {
+                                            Text(
+                                                text = when (movieScreen) {
+                                                    MovieScreen.Home -> "MOVIEVERSE"
+                                                    MovieScreen.Favorites -> "FAVORITAS"
+                                                    MovieScreen.Forum -> "FORO"
+                                                    MovieScreen.Profile -> "PERFIL"
+                                                    else -> ""
+                                                },
+                                                style = MaterialTheme.typography.titleLarge
+                                            )
+                                        }
                                     }
                                 },
                                 actions = {
@@ -243,6 +275,20 @@ fun MovieVerseNavigation(
                                         } else {
                                             IconButton(onClick = { searchVisible = true }) {
                                                 Icon(imageVector = Icons.Default.Search, contentDescription = "Buscar")
+                                            }
+                                        }
+                                    }
+                                    if (movieScreen == MovieScreen.Forum) {
+                                        if (forumSearchVisible) {
+                                            IconButton(onClick = { forumSearchVisible = false; forumSearchQuery = "" }) {
+                                                Icon(imageVector = Icons.Default.Close, contentDescription = "Cerrar búsqueda")
+                                            }
+                                        } else {
+                                            IconButton(onClick = { forumShowCreateDialog = true }) {
+                                                Icon(imageVector = Icons.Default.Add, contentDescription = "Nuevo chat")
+                                            }
+                                            IconButton(onClick = { forumSearchVisible = true }) {
+                                                Icon(imageVector = Icons.Default.Search, contentDescription = "Buscar chat")
                                             }
                                         }
                                     }
@@ -328,6 +374,9 @@ fun MovieVerseNavigation(
                             MovieScreen.Forum -> {
                                 ForumScreen(
                                     contentPadding = innerPadding,
+                                    searchQuery = forumSearchQuery,
+                                    showCreateDialog = forumShowCreateDialog,
+                                    onCreateDialogDismiss = { forumShowCreateDialog = false },
                                     onChatClick = { chat ->
                                         lastListScreen = MovieScreen.Forum
                                         movieScreen = MovieScreen.ForumChatDetail(chatId = chat.id, title = chat.title)
@@ -343,6 +392,9 @@ fun MovieVerseNavigation(
                                         lastListScreen = MovieScreen.Home
                                         searchVisible = false
                                         searchQuery = ""
+                                        forumSearchVisible = false
+                                        forumSearchQuery = ""
+                                        forumShowCreateDialog = false
                                         authFlowScreen = AuthFlowScreen.Login
                                     }
                                 )
