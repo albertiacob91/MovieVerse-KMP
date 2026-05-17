@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -47,12 +46,14 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 @Composable
 fun ForumScreen(
     contentPadding: PaddingValues,
+    searchQuery: String = "",
+    showCreateDialog: Boolean = false,
+    onCreateDialogDismiss: () -> Unit = {},
     onChatClick: (ForumChatDto) -> Unit
 ) {
     val viewModel: ForumViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    var showCreateDialog by remember { mutableStateOf(false) }
     var newChatTitle by remember { mutableStateOf("") }
     var chatToDelete by remember { mutableStateOf<ForumChatDto?>(null) }
 
@@ -62,7 +63,7 @@ fun ForumScreen(
 
     if (showCreateDialog) {
         AlertDialog(
-            onDismissRequest = { showCreateDialog = false; newChatTitle = "" },
+            onDismissRequest = { onCreateDialogDismiss(); newChatTitle = "" },
             title = { Text("Nuevo chat global") },
             text = {
                 OutlinedTextField(
@@ -77,7 +78,7 @@ fun ForumScreen(
                     onClick = {
                         if (newChatTitle.isNotBlank()) {
                             val title = newChatTitle
-                            showCreateDialog = false
+                            onCreateDialogDismiss()
                             newChatTitle = ""
                             viewModel.createChat(title)
                         }
@@ -85,7 +86,7 @@ fun ForumScreen(
                 ) { Text("Crear") }
             },
             dismissButton = {
-                TextButton(onClick = { showCreateDialog = false; newChatTitle = "" }) { Text("Cancelar") }
+                TextButton(onClick = { onCreateDialogDismiss(); newChatTitle = "" }) { Text("Cancelar") }
             }
         )
     }
@@ -107,21 +108,17 @@ fun ForumScreen(
         )
     }
 
+    val filteredChats = remember(state.chats, searchQuery) {
+        if (searchQuery.isBlank()) state.chats
+        else state.chats.filter { it.title.contains(searchQuery, ignoreCase = true) }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(contentPadding)
             .padding(horizontal = Dimens.screenPadding)
     ) {
-        Button(
-            onClick = { showCreateDialog = true },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = Dimens.mediumSpacing)
-        ) {
-            Text("Crear nuevo chat global")
-        }
-
         when {
             state.isLoading -> {
                 Text(text = "Cargando chats...", modifier = Modifier.padding(top = Dimens.mediumSpacing))
@@ -131,8 +128,11 @@ fun ForumScreen(
                 Text(text = "Error: ${state.error}", modifier = Modifier.padding(top = Dimens.mediumSpacing))
             }
 
-            state.chats.isEmpty() -> {
-                Text(text = "Todavía no hay chats creados", modifier = Modifier.padding(top = Dimens.mediumSpacing))
+            filteredChats.isEmpty() -> {
+                Text(
+                    text = if (searchQuery.isNotBlank()) "Sin resultados para \"$searchQuery\"" else "Todavía no hay chats creados",
+                    modifier = Modifier.padding(top = Dimens.mediumSpacing)
+                )
             }
 
             else -> {
@@ -142,7 +142,7 @@ fun ForumScreen(
                         .padding(top = Dimens.mediumSpacing),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(state.chats) { chat ->
+                    items(filteredChats) { chat ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
