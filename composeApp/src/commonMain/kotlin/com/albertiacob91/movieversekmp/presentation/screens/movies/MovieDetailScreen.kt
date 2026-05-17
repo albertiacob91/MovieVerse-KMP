@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -39,6 +40,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -56,6 +58,7 @@ import com.albertiacob91.movieversekmp.presentation.theme.GoldStar
 import com.albertiacob91.movieversekmp.presentation.viewmodel.MovieDetailViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MovieDetailScreen(
     movieId: Int,
@@ -65,6 +68,7 @@ fun MovieDetailScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var commentText by remember { mutableStateOf("") }
     val context = LocalPlatformContext.current
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     LaunchedEffect(movieId) {
         viewModel.load(movieId)
@@ -76,19 +80,23 @@ fun MovieDetailScreen(
         }
     }
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val mediaHeight = (maxWidth * 0.5625f).coerceIn(200.dp, 450.dp)
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            DetailTopBar(
+                title = state.movie?.title ?: "",
+                isFavorite = state.isFavorite,
+                onBackClick = onBackClick,
+                onFavoriteClick = { viewModel.toggleFavorite(movieId) },
+                scrollBehavior = scrollBehavior
+            )
+        }
+    ) { innerPadding ->
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            val mediaHeight = (maxWidth * 0.5625f).coerceIn(200.dp, 450.dp)
 
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-            LazyColumn(modifier = Modifier.fillMaxSize().widthIn(max = Dimens.maxContentWidth)) {
-                item {
-                    DetailTopBar(
-                        title = state.movie?.title ?: "",
-                        isFavorite = state.isFavorite,
-                        onBackClick = onBackClick,
-                        onFavoriteClick = { viewModel.toggleFavorite(movieId) }
-                    )
-                }
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                LazyColumn(modifier = Modifier.fillMaxSize().widthIn(max = Dimens.maxContentWidth)) {
 
                 when {
                     state.isLoading -> {
@@ -202,6 +210,16 @@ fun MovieDetailScreen(
                                     genres.take(5).forEach { genre -> GenrePill(genre) }
                                 }
 
+                                Spacer(modifier = Modifier.height(24.dp))
+
+                                Text(text = "Sinopsis", style = MaterialTheme.typography.titleMedium)
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text(
+                                    text = currentMovie.overview.ifBlank { "Sin descripción" },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
                                 if (currentMovie.watchProviders.isNotEmpty()) {
                                     Spacer(modifier = Modifier.height(24.dp))
                                     Text(
@@ -236,16 +254,6 @@ fun MovieDetailScreen(
                                         items(currentMovie.cast) { castMember -> CastItem(castMember) }
                                     }
                                 }
-
-                                Spacer(modifier = Modifier.height(24.dp))
-
-                                Text(text = "Sinopsis", style = MaterialTheme.typography.titleMedium)
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Text(
-                                    text = currentMovie.overview.ifBlank { "Sin descripción" },
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
 
                                 if (state.favoriteMessage.isNotBlank()) {
                                     Spacer(modifier = Modifier.height(8.dp))
@@ -300,6 +308,7 @@ fun MovieDetailScreen(
         }
     }
 }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -307,9 +316,11 @@ private fun DetailTopBar(
     title: String,
     isFavorite: Boolean,
     onBackClick: () -> Unit,
-    onFavoriteClick: () -> Unit
+    onFavoriteClick: () -> Unit,
+    scrollBehavior: androidx.compose.material3.TopAppBarScrollBehavior
 ) {
     TopAppBar(
+        scrollBehavior = scrollBehavior,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface,
             titleContentColor = MaterialTheme.colorScheme.onSurface,
@@ -327,7 +338,7 @@ private fun DetailTopBar(
         title = {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
