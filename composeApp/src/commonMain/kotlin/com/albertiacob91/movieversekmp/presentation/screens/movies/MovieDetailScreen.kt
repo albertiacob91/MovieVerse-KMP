@@ -27,11 +27,14 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -199,6 +202,29 @@ fun MovieDetailScreen(
                                     genres.take(5).forEach { genre -> GenrePill(genre) }
                                 }
 
+                                if (currentMovie.watchProviders.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(24.dp))
+                                    Text(
+                                        text = "Dónde ver",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    val streaming = currentMovie.watchProviders.filter { it.type == "streaming" }
+                                    val rent = currentMovie.watchProviders.filter { it.type == "rent" }
+                                    val buy = currentMovie.watchProviders.filter { it.type == "buy" }
+                                    if (streaming.isNotEmpty()) {
+                                        WatchProviderRow(label = "En streaming", providers = streaming)
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                    }
+                                    if (rent.isNotEmpty()) {
+                                        WatchProviderRow(label = "Alquiler", providers = rent)
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                    }
+                                    if (buy.isNotEmpty()) {
+                                        WatchProviderRow(label = "Compra", providers = buy)
+                                    }
+                                }
+
                                 if (currentMovie.cast.isNotEmpty()) {
                                     Spacer(modifier = Modifier.height(24.dp))
                                     Text(
@@ -275,6 +301,7 @@ fun MovieDetailScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DetailTopBar(
     title: String,
@@ -282,36 +309,39 @@ private fun DetailTopBar(
     onBackClick: () -> Unit,
     onFavoriteClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 8.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = onBackClick) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Volver",
-                tint = MaterialTheme.colorScheme.onSurface
+    TopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            actionIconContentColor = MaterialTheme.colorScheme.onSurface,
+            navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Volver"
+                )
+            }
+        },
+        title = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
+        },
+        actions = {
+            IconButton(onClick = onFavoriteClick) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                    contentDescription = "Favorito",
+                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
-        IconButton(onClick = onFavoriteClick) {
-            Icon(
-                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                contentDescription = "Favorito",
-                tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
+    )
 }
 
 @Composable
@@ -342,6 +372,43 @@ private fun GenrePill(text: String) {
             text = text,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    }
+}
+
+@Composable
+private fun WatchProviderRow(label: String, providers: List<com.albertiacob91.movieversekmp.data.remote.WatchProviderDto>) {
+    Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Spacer(modifier = Modifier.height(6.dp))
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        items(providers) { provider -> WatchProviderItem(provider) }
+    }
+}
+
+@Composable
+private fun WatchProviderItem(provider: com.albertiacob91.movieversekmp.data.remote.WatchProviderDto) {
+    val context = LocalPlatformContext.current
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        if (provider.logoUrl != null) {
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(provider.logoUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = provider.name,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(10.dp)),
+                contentScale = ContentScale.Crop
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = provider.name,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 56.dp)
         )
     }
 }

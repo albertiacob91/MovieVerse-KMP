@@ -4,6 +4,7 @@ import com.albertiacob91.movieversekmp.server.data.remote.dto.TmdbCreditsDto
 import com.albertiacob91.movieversekmp.server.data.remote.dto.TmdbMovieDetailDto
 import com.albertiacob91.movieversekmp.server.data.remote.dto.TmdbPopularResponseDto
 import com.albertiacob91.movieversekmp.server.data.remote.dto.TmdbVideosDto
+import com.albertiacob91.movieversekmp.server.data.remote.dto.TmdbWatchProvidersDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -49,6 +50,12 @@ class TmdbApi(
         return client.get("$baseUrl/movie/$movieId/videos") {
             parameter("api_key", apiKey)
             parameter("language", "es-ES")
+        }.body()
+    }
+
+    suspend fun getMovieWatchProviders(movieId: Int): TmdbWatchProvidersDto {
+        return client.get("$baseUrl/movie/$movieId/watch/providers") {
+            parameter("api_key", apiKey)
         }.body()
     }
 }

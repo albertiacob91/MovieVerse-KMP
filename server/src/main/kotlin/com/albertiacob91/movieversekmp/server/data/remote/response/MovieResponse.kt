@@ -13,5 +13,6 @@ data class MovieResponse(
     val runtime: Int? = null,
     val genres: List<String> = emptyList(),
     val cast: List<CastMemberResponse> = emptyList(),
-    val trailerUrl: String? = null
+    val trailerUrl: String? = null,
+    val watchProviders: List<WatchProviderResponse> = emptyList()
 )

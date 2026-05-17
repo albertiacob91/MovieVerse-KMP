@@ -33,6 +33,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.core.ktx)
             implementation("io.ktor:ktor-client-cio:3.4.2")
             implementation("io.coil-kt.coil3:coil-network-okhttp:3.4.0")
             implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:13.0.0")
