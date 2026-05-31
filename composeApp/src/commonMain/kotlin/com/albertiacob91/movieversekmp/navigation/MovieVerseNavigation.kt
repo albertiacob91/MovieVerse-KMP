@@ -32,6 +32,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -233,10 +235,12 @@ fun MovieVerseNavigation(
                                             )
                                         }
                                         movieScreen == MovieScreen.Forum && forumSearchVisible -> {
+                                            val forumFocusRequester = remember { FocusRequester() }
+                                            LaunchedEffect(Unit) { forumFocusRequester.requestFocus() }
                                             OutlinedTextField(
                                                 value = forumSearchQuery,
                                                 onValueChange = { forumSearchQuery = it },
-                                                modifier = Modifier.fillMaxWidth(),
+                                                modifier = Modifier.fillMaxWidth().focusRequester(forumFocusRequester),
                                                 singleLine = true,
                                                 placeholder = { Text("Buscar chat...") },
                                                 colors = TextFieldDefaults.colors(

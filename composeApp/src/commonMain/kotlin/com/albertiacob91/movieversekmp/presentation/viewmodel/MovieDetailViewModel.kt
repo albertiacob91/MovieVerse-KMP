@@ -40,7 +40,7 @@ class MovieDetailViewModel(
 
     fun load(movieId: Int) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = "") }
+            _state.update { it.copy(isLoading = true, error = "", favoriteMessage = "", commentMessage = "") }
 
             runCatching { getMovieDetailUseCase(movieId) }
                 .onSuccess { movie ->

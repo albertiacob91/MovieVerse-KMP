@@ -47,13 +47,12 @@ class ForumChatDetailViewModel(
             runCatching { createForumMessageUseCase(token, chatId, content.trim()) }
                 .onSuccess { created ->
                     if (created != null) {
-                        loadMessages(chatId)
+                        _state.update { it.copy(messages = it.messages + created, isSending = false) }
                     } else {
                         _state.update { it.copy(error = "No se pudo enviar el mensaje", isSending = false) }
                     }
                 }
                 .onFailure { e -> _state.update { it.copy(error = e.message ?: "Error enviando mensaje", isSending = false) } }
-            _state.update { it.copy(isSending = false) }
         }
     }
 }
